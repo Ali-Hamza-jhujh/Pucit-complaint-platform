@@ -1,0 +1,29 @@
+#div{
+    
+    height: 500px;
+    width: 500px;
+    background-color:  rgb(175, 175, 185);
+    display: flex;
+    align-items: center;
+    align-content: center;
+    justify-content: center;
+    position: absolute;
+    left: 38%;
+    flex-direction: column;
+    
+}
+#div button{
+    background-color: white;
+    border-radius: 20px;
+    padding: 10px 10px 10px 10px;
+    cursor: pointer;
+}
+#f{
+    margin-left: 200px;
+    padding-bottom: 200px;
+}
+h1{
+    padding-left: 690px;
+    color: rgb(103, 103, 194);
+    font-size: 50px;
+}
