@@ -121,8 +121,11 @@ a:hover {
 }
 
 .brand-badge svg {
-  width: 34px;
-  height: 34px;
+  width: 34px !important;
+  height: 34px !important;
+  max-width: 34px;
+  max-height: 34px;
+  display: block;
 }
 
 .brand-title {
@@ -183,6 +186,11 @@ a:hover {
   align-items: center;
 }
 
+.input-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
 .form-control {
   width: 100%;
   padding: 12px 14px 12px 42px;
@@ -216,6 +224,11 @@ a:hover {
 
 .toggle-password:hover {
   color: var(--text-primary);
+}
+
+.toggle-password svg {
+  width: 18px;
+  height: 18px;
 }
 
 /* Helper Checkbox & Forgot */
@@ -398,6 +411,11 @@ a:hover {
   color: var(--accent);
 }
 
+.nav-logo-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
 .nav-title-text {
   font-size: 17px;
   font-weight: 700;
@@ -462,7 +480,6 @@ a:hover {
   padding: 0 20px;
 }
 
-/* Dev / Work in progress notice */
 .dev-banner {
   background: linear-gradient(90deg, #fffbeb 0%, #fef3c7 100%);
   border-left: 4px solid var(--accent);
@@ -669,7 +686,6 @@ a:hover {
   color: #075985;
 }
 
-/* Quick Form in Panel */
 .form-select, textarea.form-control {
   width: 100%;
   padding: 10px 14px;
@@ -686,7 +702,6 @@ a:hover {
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
-/* Empty State */
 .empty-state {
   text-align: center;
   padding: 40px 20px;
@@ -700,7 +715,6 @@ a:hover {
   color: #cbd5e1;
 }
 
-/* Responsive adjustments */
 @media (max-width: 600px) {
   .auth-card {
     padding: 24px 20px;

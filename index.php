@@ -27,8 +27,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $error = "Password must be at least 6 characters long.";
     } elseif ($pass !== $c_pass) {
         $error = "Password and Confirm Password do not match.";
-    } elseif ($conn->connect_error) {
-        $error = "Database connection error. Please ensure MySQL is active.";
+    } elseif (!$conn || $conn->connect_error) {
+        $error = "Database connection error. Please ensure MySQL is active (sudo service mysql start).";
     } else {
         // Check if email already exists
         $check_stmt = $conn->prepare("SELECT id FROM USERS WHERE email = ? LIMIT 1");
@@ -75,7 +75,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PUCIT Complaint Portal - Student Registration</title>
-    <link rel="stylesheet" href="style.css">
+    <!-- Cache-busting CSS link -->
+    <link rel="stylesheet" href="style.css?v=<?= time() ?>">
+    <!-- Inline fallback to ensure instant loading even if cached -->
+    <style>
+        <?= file_get_contents(__DIR__ . "/style.css") ?>
+    </style>
 </head>
 <body>
 
@@ -85,7 +90,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         <div class="brand-header">
             <div class="brand-badge">
                 <!-- Academic Graduation / College Shield SVG Icon -->
-                <svg fill="currentColor" viewBox="0 0 24 24">
+                <svg width="34" height="34" style="width: 34px; height: 34px; max-width: 34px; max-height: 34px; display: block;" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M12 3L1 9L12 15L21 10.09V17H23V9M5 13.18V17.18C5 19.94 8.13 22 12 22C15.87 22 19 19.94 19 17.18V13.18L12 17L5 13.18Z" />
                 </svg>
             </div>
@@ -99,7 +104,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         <!-- Alert Notification -->
         <?php if (!empty($error)): ?>
             <div class="alert alert-danger">
-                <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
+                <svg width="20" height="20" style="min-width: 20px;" fill="currentColor" viewBox="0 0 20 20">
                     <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
                 </svg>
                 <span><?= $error ?></span>
@@ -113,7 +118,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 <label class="form-label" for="name">Full Name</label>
                 <div class="input-container">
                     <span class="input-icon">
-                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <svg width="18" height="18" style="width: 18px; height: 18px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                         </svg>
                     </span>
@@ -134,7 +139,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 <label class="form-label" for="email">Student / College Email</label>
                 <div class="input-container">
                     <span class="input-icon">
-                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <svg width="18" height="18" style="width: 18px; height: 18px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                         </svg>
                     </span>
@@ -155,7 +160,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 <label class="form-label" for="password">Password</label>
                 <div class="input-container">
                     <span class="input-icon">
-                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <svg width="18" height="18" style="width: 18px; height: 18px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                         </svg>
                     </span>
@@ -168,7 +173,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         required
                     >
                     <button type="button" class="toggle-password" onclick="togglePassVisibility('password', this)" title="Show/Hide Password">
-                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <svg width="18" height="18" style="width: 18px; height: 18px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                             <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                         </svg>
@@ -181,7 +186,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 <label class="form-label" for="c_password">Confirm Password</label>
                 <div class="input-container">
                     <span class="input-icon">
-                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <svg width="18" height="18" style="width: 18px; height: 18px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                         </svg>
                     </span>
@@ -194,7 +199,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         required
                     >
                     <button type="button" class="toggle-password" onclick="togglePassVisibility('c_password', this)" title="Show/Hide Password">
-                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <svg width="18" height="18" style="width: 18px; height: 18px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                             <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                         </svg>
@@ -205,7 +210,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <!-- Submit Button -->
             <button type="submit" class="btn btn-primary btn-block">
                 <span>Create Student Account</span>
-                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <svg width="18" height="18" style="width: 18px; height: 18px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                 </svg>
             </button>

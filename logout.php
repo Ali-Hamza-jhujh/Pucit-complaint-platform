@@ -1,10 +1,9 @@
 <?php
 require_once "db.php";
 
-// Unset all session variables
+
 $_SESSION = array();
 
-// Destroy session cookie if present
 if (ini_get("session.use_cookies")) {
     $params = session_get_cookie_params();
     setcookie(
@@ -18,10 +17,9 @@ if (ini_get("session.use_cookies")) {
     );
 }
 
-// Destroy the session
+
 session_destroy();
 
-// Redirect to login page
 header("Location: login.php");
 exit();
 ?>

@@ -72,7 +72,12 @@ if ($conn && !$conn->connect_error) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PUCIT Complaint Platform - Home Dashboard</title>
-    <link rel="stylesheet" href="style.css">
+    <!-- Cache-busting CSS link -->
+    <link rel="stylesheet" href="style.css?v=<?= time() ?>">
+    <!-- Inline fallback to ensure instant loading even if cached -->
+    <style>
+        <?= file_get_contents(__DIR__ . "/style.css") ?>
+    </style>
 </head>
 <body>
 
@@ -81,7 +86,7 @@ if ($conn && !$conn->connect_error) {
         <div class="nav-container">
             <a href="home.php" class="nav-brand">
                 <div class="nav-logo-icon">
-                    <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                    <svg width="24" height="24" style="width: 24px; height: 24px;" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M12 3L1 9L12 15L21 10.09V17H23V9M5 13.18V17.18C5 19.94 8.13 22 12 22C15.87 22 19 19.94 19 17.18V13.18L12 17L5 13.18Z" />
                     </svg>
                 </div>
@@ -97,7 +102,7 @@ if ($conn && !$conn->connect_error) {
                     <span><?= htmlspecialchars($user_name) ?></span>
                 </div>
                 <a href="logout.php" class="btn btn-logout" title="Sign out">
-                    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <svg width="15" height="15" style="width: 15px; height: 15px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                     </svg>
                     <span>Logout</span>
@@ -127,7 +132,7 @@ if ($conn && !$conn->connect_error) {
                 <p>Welcome to the official PUCIT Grievance & Complaint Redressal Platform. Report facility issues, computer lab problems, or academic inquiries directly to college administration.</p>
             </div>
             <a href="#new-complaint" class="btn btn-accent">
-                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <svg width="18" height="18" style="width: 18px; height: 18px;" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
                 </svg>
                 <span>File New Complaint</span>
@@ -175,7 +180,7 @@ if ($conn && !$conn->connect_error) {
             <div class="panel">
                 <div class="panel-header">
                     <h3 class="panel-title">
-                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <svg width="18" height="18" style="width: 18px; height: 18px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                         </svg>
                         <span>My Complaint Tickets</span>
@@ -185,7 +190,7 @@ if ($conn && !$conn->connect_error) {
                 <div class="panel-body">
                     <?php if (empty($complaints_list)): ?>
                         <div class="empty-state">
-                            <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                            <svg width="48" height="48" style="width: 48px; height: 48px;" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                             </svg>
                             <h4>No complaints filed yet</h4>
@@ -242,7 +247,7 @@ if ($conn && !$conn->connect_error) {
             <div class="panel" id="new-complaint">
                 <div class="panel-header">
                     <h3 class="panel-title">
-                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <svg width="18" height="18" style="width: 18px; height: 18px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                         </svg>
                         <span>File a Complaint</span>
@@ -299,7 +304,7 @@ if ($conn && !$conn->connect_error) {
 
                         <button type="submit" name="submit_complaint" class="btn btn-primary btn-block">
                             <span>Submit Complaint</span>
-                            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <svg width="18" height="18" style="width: 18px; height: 18px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                             </svg>
                         </button>

@@ -23,8 +23,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $error = "Please enter both email and password.";
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = "Please enter a valid email address.";
-    } elseif ($conn->connect_error) {
-        $error = "Database connection error. Please ensure MySQL is active.";
+    } elseif (!$conn || $conn->connect_error) {
+        $error = "Database connection error. Please ensure MySQL is active (sudo service mysql start).";
     } else {
         // Prepare secure statement to look up user
         $stmt = $conn->prepare("SELECT id, name, email, password FROM USERS WHERE email = ? LIMIT 1");
@@ -81,7 +81,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PUCIT Complaint Portal - Login</title>
-    <link rel="stylesheet" href="style.css">
+    <!-- Cache-busting CSS link -->
+    <link rel="stylesheet" href="style.css?v=<?= time() ?>">
+    <!-- Inline fallback to ensure instant loading even if cached -->
+    <style>
+        <?= file_get_contents(__DIR__ . "/style.css") ?>
+    </style>
 </head>
 <body>
 
@@ -90,7 +95,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         <!-- University Branding -->
         <div class="brand-header">
             <div class="brand-badge">
-                <svg fill="currentColor" viewBox="0 0 24 24">
+                <svg width="34" height="34" style="width: 34px; height: 34px; max-width: 34px; max-height: 34px; display: block;" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M12 3L1 9L12 15L21 10.09V17H23V9M5 13.18V17.18C5 19.94 8.13 22 12 22C15.87 22 19 19.94 19 17.18V13.18L12 17L5 13.18Z" />
                 </svg>
             </div>
@@ -104,7 +109,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         <!-- Success Alert -->
         <?php if (!empty($success)): ?>
             <div class="alert alert-success">
-                <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
+                <svg width="20" height="20" style="min-width: 20px;" fill="currentColor" viewBox="0 0 20 20">
                     <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
                 </svg>
                 <span><?= htmlspecialchars($success) ?></span>
@@ -114,7 +119,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         <!-- Error Alert -->
         <?php if (!empty($error)): ?>
             <div class="alert alert-danger">
-                <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
+                <svg width="20" height="20" style="min-width: 20px;" fill="currentColor" viewBox="0 0 20 20">
                     <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
                 </svg>
                 <span><?= $error ?></span>
@@ -128,7 +133,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 <label class="form-label" for="email">Student / PUCIT Email</label>
                 <div class="input-container">
                     <span class="input-icon">
-                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <svg width="18" height="18" style="width: 18px; height: 18px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                         </svg>
                     </span>
@@ -149,7 +154,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 <label class="form-label" for="password">Password</label>
                 <div class="input-container">
                     <span class="input-icon">
-                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <svg width="18" height="18" style="width: 18px; height: 18px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                         </svg>
                     </span>
@@ -162,7 +167,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         required
                     >
                     <button type="button" class="toggle-password" onclick="togglePassVisibility('password', this)" title="Show/Hide Password">
-                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <svg width="18" height="18" style="width: 18px; height: 18px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                             <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                         </svg>
@@ -181,7 +186,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <!-- Submit Button -->
             <button type="submit" class="btn btn-primary btn-block">
                 <span>Sign In to Portal</span>
-                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <svg width="18" height="18" style="width: 18px; height: 18px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                 </svg>
             </button>
