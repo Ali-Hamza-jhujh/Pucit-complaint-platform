@@ -31,6 +31,9 @@ if ($conn && !$conn->connect_error) {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
+    // Ensure PASSWORD column supports bcrypt hashes (60+ chars)
+    @$conn->query("ALTER TABLE USERS MODIFY COLUMN PASSWORD VARCHAR(255) NOT NULL");
+
     // COMPLAINTS Table for PUCIT Platform
     $conn->query("CREATE TABLE IF NOT EXISTS complaints (
         id INT AUTO_INCREMENT PRIMARY KEY,
