@@ -4,9 +4,6 @@ if (session_status() === PHP_SESSION_NONE) {
     @session_start();
 }
 
-// Disable fatal mysqli exceptions so errors can be handled gracefully
-mysqli_report(MYSQLI_REPORT_OFF);
-
 // Database Configuration
 $db_host = "localhost";
 $db_user = "devuser";
@@ -14,6 +11,7 @@ $db_pass = "2026";
 $db_name = "devdb";
 
 // Connect to MySQL safely
+mysqli_report(MYSQLI_REPORT_OFF);
 try {
     $conn = @new mysqli($db_host, $db_user, $db_pass, $db_name);
 } catch (Throwable $e) {
@@ -49,14 +47,21 @@ if ($conn && !$conn->connect_error) {
 }
 
 // Auth helper functions
-function is_logged_in() {
-    return isset($_SESSION['user_id']) || isset($_SESSION['user_email']);
+if (!function_exists('is_logged_in')) {
+    function is_logged_in() {
+        if (session_status() === PHP_SESSION_NONE) {
+            @session_start();
+        }
+        return isset($_SESSION['user_id']) || isset($_SESSION['user_email']);
+    }
 }
 
-function require_login() {
-    if (!is_logged_in()) {
-        header("Location: login.php");
-        exit();
+if (!function_exists('require_login')) {
+    function require_login() {
+        if (!is_logged_in()) {
+            header("Location: login.php");
+            exit();
+        }
     }
 }
 ?>

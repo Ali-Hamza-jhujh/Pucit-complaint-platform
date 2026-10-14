@@ -1,5 +1,14 @@
 <?php
+if (session_status() === PHP_SESSION_NONE) {
+    @session_start();
+}
 require_once "db.php";
+
+if (!function_exists('is_logged_in')) {
+    function is_logged_in() {
+        return isset($_SESSION['user_id']) || isset($_SESSION['user_email']);
+    }
+}
 
 // If already logged in, redirect to home page
 if (is_logged_in()) {
