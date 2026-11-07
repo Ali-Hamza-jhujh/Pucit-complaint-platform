@@ -6,7 +6,7 @@ require_once "db.php";
 
 if (!function_exists('is_logged_in')) {
     function is_logged_in() {
-        return isset($_SESSION['user_id']) || isset($_SESSION['user_email']);
+        return  isset($_SESSION['user_id']) || isset($_SESSION['user_email']);
     }
 }
 
