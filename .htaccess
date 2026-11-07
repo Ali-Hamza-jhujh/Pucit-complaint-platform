@@ -1,0 +1,68 @@
+# ============================================================
+# PUCIT Complaint Platform — Apache Security Configuration
+# ============================================================
+
+# ---- Disable directory listing ------------------------------
+# Without this, Apache would show all files if no index exists.
+Options -Indexes
+
+# ---- Block direct HTTP access to sensitive server-side files
+# PHP includes/configs can still require_once these internally.
+<FilesMatch "^(config\.php|db\.php|README\.md|\.env.*)$">
+    Require all denied
+</FilesMatch>
+
+# Protect this file itself
+<Files ".htaccess">
+    Require all denied
+</Files>
+
+# ---- Rewrite rules ------------------------------------------
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Block direct HTTP access to the includes/ directory
+    RewriteRule ^includes(/.*)?$ - [F,L]
+
+    # Block PHP execution inside the uploads/ directory
+    RewriteRule ^uploads/.*\.(php[0-9]?|phtml|phar|shtml)$ - [F,L]
+
+    # Block access to .git directory
+    RewriteRule ^\.git(/.*)?$ - [F,L]
+</IfModule>
+
+# ---- Security Response Headers ------------------------------
+<IfModule mod_headers.c>
+    # Prevent browsers from MIME-sniffing away from the declared content type
+    Header always set X-Content-Type-Options "nosniff"
+
+    # Disallow rendering this site inside an iframe (clickjacking protection)
+    Header always set X-Frame-Options "SAMEORIGIN"
+
+    # Legacy XSS filter for older browsers
+    Header always set X-XSS-Protection "1; mode=block"
+
+    # Control how much referrer information is shared
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+    # Content Security Policy
+    # 'unsafe-inline' is required by the current CSS/JS approach.
+    # Tighten this once inline styles/scripts are refactored to external files.
+    Header always set Content-Security-Policy "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self';"
+
+    # Strip server fingerprinting headers
+    Header always unset X-Powered-By
+    Header unset Server
+</IfModule>
+
+# ---- PHP hardening (mod_php only) ---------------------------
+<IfModule mod_php.c>
+    php_flag expose_php     Off
+    php_flag display_errors Off
+    php_flag log_errors     On
+</IfModule>
+<IfModule php_module>
+    php_flag expose_php     Off
+    php_flag display_errors Off
+    php_flag log_errors     On
+</IfModule>

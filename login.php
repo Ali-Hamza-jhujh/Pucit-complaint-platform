@@ -1,14 +1,6 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    @session_start();
-}
+// db.php handles: config, hardened session, DB connection, schema, auth helpers
 require_once "db.php";
-
-if (!function_exists('is_logged_in')) {
-    function is_logged_in() {
-        return isset($_SESSION['user_id']) || isset($_SESSION['user_email']);
-    }
-}
 
 // If already logged in, redirect straight to home page
 if (is_logged_in()) {

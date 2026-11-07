@@ -1,0 +1,11 @@
+# ============================================================
+# uploads/.htaccess — Block code execution inside uploads/
+# ============================================================
+
+# Disable directory listing
+Options -Indexes
+
+# Deny execution of any server-side script files that may be uploaded
+<FilesMatch "\.(php[0-9]?|phtml|phar|shtml|cgi|pl|py|rb|sh|exe|bat)$">
+    Require all denied
+</FilesMatch>
