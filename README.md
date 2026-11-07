@@ -1,4 +1,4 @@
-Project Description
+Project Description 
 The FCIT Student Complaint Web Application is a secure platform designed for the Faculty of Computing and Information Technology (FCIT) to let students voice concerns while protecting their identities.
 To ensure authenticity, students must authenticate using their official university Gmail accounts. When a student submits a complaint, the system maps it to their account backend via the student_id foreign key. However, across all public fields or standard user interfaces, the complaint filer's identity is strictly anonymous. Only authorized administrative staff accessing the secure Admin Portal have the system clearance to pull the user profile and identify the filer for genuine resolution and auditing purposes.
 
