@@ -94,7 +94,11 @@ $total_count = 0;
 $pending_count = 0;
 $progress_count = 0;
 $resolved_count = 0;
+$dismissed_count = 0;
 $complaints_list = [];
+
+$filter_status = trim($_GET['status'] ?? '');
+$valid_statuses = ['Pending', 'In Review', 'Resolved', 'Dismissed'];
 
 if ($conn && !$conn->connect_error) {
     // Stats query (overall)
@@ -102,18 +106,38 @@ if ($conn && !$conn->connect_error) {
         COUNT(*) as total,
         SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) as pending,
         SUM(CASE WHEN status = 'In Review' THEN 1 ELSE 0 END) as in_review,
-        SUM(CASE WHEN status = 'Resolved' THEN 1 ELSE 0 END) as resolved
+        SUM(CASE WHEN status = 'Resolved' THEN 1 ELSE 0 END) as resolved,
+        SUM(CASE WHEN status = 'Dismissed' THEN 1 ELSE 0 END) as dismissed
         FROM complaints WHERE user_id = " . intval($user_id));
     
     if ($st && $row = $st->fetch_assoc()) {
-        $total_count = $row["total"] ?? 0;
-        $pending_count = $row["pending"] ?? 0;
-        $progress_count = $row["in_review"] ?? 0;
-        $resolved_count = $row["resolved"] ?? 0;
+        $total_count     = (int)($row["total"] ?? 0);
+        $pending_count   = (int)($row["pending"] ?? 0);
+        $progress_count  = (int)($row["in_review"] ?? 0);
+        $resolved_count  = (int)($row["resolved"] ?? 0);
+        $dismissed_count = (int)($row["dismissed"] ?? 0);
     }
 
+    // Build filter clause
+    $where_sql = "WHERE user_id = " . intval($user_id);
+    if ($filter_status !== '' && in_array($filter_status, $valid_statuses)) {
+        $where_sql .= " AND status = '" . $conn->real_escape_string($filter_status) . "'";
+    }
+
+    // Pagination calculation
+    $per_page = 10;
+    $page = max(1, intval($_GET['page'] ?? 1));
+    $cnt_res = $conn->query("SELECT COUNT(*) AS cnt FROM complaints " . $where_sql);
+    $total_filtered = 0;
+    if ($cnt_res && $cr = $cnt_res->fetch_assoc()) {
+        $total_filtered = (int)$cr['cnt'];
+    }
+    $total_pages = max(1, (int)ceil($total_filtered / $per_page));
+    if ($page > $total_pages) $page = $total_pages;
+    $offset = ($page - 1) * $per_page;
+
     // Complaints list
-    $res = $conn->query("SELECT * FROM complaints WHERE user_id = " . intval($user_id) . " ORDER BY id DESC LIMIT 15");
+    $res = $conn->query("SELECT * FROM complaints " . $where_sql . " ORDER BY id DESC LIMIT " . $per_page . " OFFSET " . $offset);
     if ($res) {
         while ($r = $res->fetch_assoc()) {
             $complaints_list[] = $r;
@@ -191,37 +215,47 @@ if ($conn && !$conn->connect_error) {
 
         <!-- Quick Stats Cards -->
         <div class="stats-grid">
-            <div class="stat-card">
+            <a href="home.php" class="stat-card" style="text-decoration:none; <?= $filter_status === '' ? 'border-color:var(--secondary);' : '' ?>">
                 <div class="stat-icon total">📋</div>
                 <div>
                     <div class="stat-number"><?= $total_count ?></div>
                     <div class="stat-title">Total Lodged</div>
                 </div>
-            </div>
+            </a>
 
-            <div class="stat-card">
+            <a href="home.php?status=Pending" class="stat-card" style="text-decoration:none; <?= $filter_status === 'Pending' ? 'border-color:var(--secondary);' : '' ?>">
                 <div class="stat-icon pending">⏳</div>
                 <div>
                     <div class="stat-number"><?= $pending_count ?></div>
                     <div class="stat-title">Pending Review</div>
                 </div>
-            </div>
+            </a>
 
-            <div class="stat-card">
+            <a href="home.php?status=In+Review" class="stat-card" style="text-decoration:none; <?= $filter_status === 'In Review' ? 'border-color:var(--secondary);' : '' ?>">
                 <div class="stat-icon progress">⚙️</div>
                 <div>
                     <div class="stat-number"><?= $progress_count ?></div>
                     <div class="stat-title">In Review</div>
                 </div>
-            </div>
+            </a>
 
-            <div class="stat-card">
+            <a href="home.php?status=Resolved" class="stat-card" style="text-decoration:none; <?= $filter_status === 'Resolved' ? 'border-color:var(--secondary);' : '' ?>">
                 <div class="stat-icon resolved">✅</div>
                 <div>
                     <div class="stat-number"><?= $resolved_count ?></div>
                     <div class="stat-title">Resolved</div>
                 </div>
-            </div>
+            </a>
+
+            <?php if ($dismissed_count > 0): ?>
+            <a href="home.php?status=Dismissed" class="stat-card" style="text-decoration:none; <?= $filter_status === 'Dismissed' ? 'border-color:var(--secondary);' : '' ?>">
+                <div class="stat-icon" style="background:#fee2e2; color:#b91c1c;">🚫</div>
+                <div>
+                    <div class="stat-number"><?= $dismissed_count ?></div>
+                    <div class="stat-title">Dismissed</div>
+                </div>
+            </a>
+            <?php endif; ?>
         </div>
 
         <!-- Main Content Area -->
@@ -281,6 +315,7 @@ if ($conn && !$conn->connect_error) {
                                                     $badge_cls = "badge-pending";
                                                     if ($st_val === "in review") $badge_cls = "badge-progress";
                                                     if ($st_val === "resolved") $badge_cls = "badge-resolved";
+                                                    if ($st_val === "dismissed") $badge_cls = "badge-high";
                                                 ?>
                                                 <span class="badge <?= $badge_cls ?>"><?= htmlspecialchars($c["status"]) ?></span>
                                             </td>
@@ -293,6 +328,28 @@ if ($conn && !$conn->connect_error) {
                                 </tbody>
                             </table>
                         </div>
+
+                        <?php if ($total_pages > 1): ?>
+                        <div class="pagination">
+                            <div>
+                                Page <strong><?= $page ?></strong> of <strong><?= $total_pages ?></strong>
+                            </div>
+                            <div class="pagination-controls">
+                                <?php
+                                    $p_params = $_GET;
+                                    unset($p_params['page']);
+                                    $p_qs = http_build_query($p_params);
+                                    $p_base = 'home.php?' . ($p_qs ? $p_qs . '&' : '');
+                                ?>
+                                <?php if ($page > 1): ?>
+                                    <a href="<?= $p_base ?>page=<?= $page - 1 ?>" class="btn btn-outline btn-sm">&laquo; Prev</a>
+                                <?php endif; ?>
+                                <?php if ($page < $total_pages): ?>
+                                    <a href="<?= $p_base ?>page=<?= $page + 1 ?>" class="btn btn-outline btn-sm">Next &raquo;</a>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        <?php endif; ?>
                     <?php endif; ?>
                 </div>
             </div>
