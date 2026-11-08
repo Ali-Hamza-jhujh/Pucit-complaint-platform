@@ -74,7 +74,11 @@ if (!function_exists('require_admin')) {
 // get_session_user()
 // Returns a safe array of the current user's session data.
 // ------------------------------------------------------------------
-if (!function_exists('get_session_user')) {
+if (!function_exists('verify_csrf')) {
+    function verify_csrf(string $token): bool {
+        return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
+    }
+}
     function get_session_user(): array {
         return [
             'id'    => (int)($_SESSION['user_id']    ?? 0),
