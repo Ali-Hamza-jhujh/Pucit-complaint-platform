@@ -47,7 +47,8 @@ if (session_status() === PHP_SESSION_NONE) {
 
     // Enforce session lifetime: expire server-side even if cookie persists
     if ($sess_lifetime > 0 && isset($_SESSION['_created_at'])) {
-        if ((time() - $_SESSION['_created_at']) > $sess_lifetime) {
+        $effective_lifetime = !empty($_SESSION['_remember_me']) ? (30 * 86400) : $sess_lifetime;
+        if ((time() - $_SESSION['_created_at']) > $effective_lifetime) {
             // Session has expired — destroy and start fresh
             session_unset();
             session_destroy();

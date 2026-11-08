@@ -94,6 +94,21 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     } else {
                         // Regenerate session ID to prevent fixation
                         session_regenerate_id(true);
+
+                        // Remember Me persistent session (30 days)
+                        if (!empty($_POST['remember'])) {
+                            $remember_duration = 30 * 86400; // 30 days
+                            setcookie(session_name(), session_id(), [
+                                'expires'  => time() + $remember_duration,
+                                'path'     => '/',
+                                'domain'   => '',
+                                'secure'   => false,
+                                'httponly' => true,
+                                'samesite' => 'Lax',
+                            ]);
+                            $_SESSION['_remember_me'] = true;
+                        }
+
                         // Set session variables, including role
                         $_SESSION["user_id"] = $user["id"];
                         $_SESSION["user_name"] = $user["name"];
