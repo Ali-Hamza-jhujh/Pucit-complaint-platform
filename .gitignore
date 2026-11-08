@@ -1,0 +1,16 @@
+# Environment credentials
+.env
+.env.local
+.env.*.local
+
+# File uploads (keep structure & htaccess)
+uploads/*
+!uploads/.htaccess
+!uploads/.gitkeep
+
+# IDE and OS files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.log

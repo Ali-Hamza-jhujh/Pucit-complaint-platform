@@ -11,12 +11,32 @@
  */
 
 // -------------------------------------------------
+// Environment Variables Loader (.env support)
+// -------------------------------------------------
+if (file_exists(__DIR__ . '/.env')) {
+    $env_lines = file(__DIR__ . '/.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    foreach ($env_lines as $line) {
+        $line = trim($line);
+        if ($line === '' || strpos($line, '#') === 0) continue;
+        if (strpos($line, '=') !== false) {
+            list($env_k, $env_v) = explode('=', $line, 2);
+            $env_k = trim($env_k);
+            $env_v = trim($env_v, " \t\n\r\0\x0B\"'");
+            if (!getenv($env_k)) {
+                putenv("{$env_k}={$env_v}");
+                $_ENV[$env_k] = $env_v;
+            }
+        }
+    }
+}
+
+// -------------------------------------------------
 // Database Configuration
 // -------------------------------------------------
-define('DB_HOST', 'localhost');
-define('DB_USER', 'devuser');
-define('DB_PASS', '2026');
-define('DB_NAME', 'devdb');
+define('DB_HOST', getenv('DB_HOST') ?: 'localhost');
+define('DB_USER', getenv('DB_USER') ?: 'devuser');
+define('DB_PASS', getenv('DB_PASS') ?: '2026');
+define('DB_NAME', getenv('DB_NAME') ?: 'devdb');
 
 // -------------------------------------------------
 // Application Identity
