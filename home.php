@@ -73,14 +73,14 @@ if ($conn && !$conn->connect_error) {
     $st = $conn->query("SELECT 
         COUNT(*) as total,
         SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) as pending,
-        SUM(CASE WHEN status = 'In Progress' THEN 1 ELSE 0 END) as progress,
+        SUM(CASE WHEN status = 'In Review' THEN 1 ELSE 0 END) as in_review,
         SUM(CASE WHEN status = 'Resolved' THEN 1 ELSE 0 END) as resolved
         FROM complaints WHERE user_id = " . intval($user_id));
     
     if ($st && $row = $st->fetch_assoc()) {
         $total_count = $row["total"] ?? 0;
         $pending_count = $row["pending"] ?? 0;
-        $progress_count = $row["progress"] ?? 0;
+        $progress_count = $row["in_review"] ?? 0;
         $resolved_count = $row["resolved"] ?? 0;
     }
 
@@ -197,7 +197,7 @@ if ($conn && !$conn->connect_error) {
                 <div class="stat-icon progress">⚙️</div>
                 <div>
                     <div class="stat-number"><?= $progress_count ?></div>
-                    <div class="stat-title">In Progress</div>
+                    <div class="stat-title">In Review</div>
                 </div>
             </div>
 
@@ -264,7 +264,7 @@ if ($conn && !$conn->connect_error) {
                                                 <?php
                                                     $st_val = strtolower($c["status"] ?? "pending");
                                                     $badge_cls = "badge-pending";
-                                                    if ($st_val === "in progress") $badge_cls = "badge-progress";
+                                                    if ($st_val === "in review") $badge_cls = "badge-progress";
                                                     if ($st_val === "resolved") $badge_cls = "badge-resolved";
                                                 ?>
                                                 <span class="badge <?= $badge_cls ?>"><?= htmlspecialchars($c["status"]) ?></span>
