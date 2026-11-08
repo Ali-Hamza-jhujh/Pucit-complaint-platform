@@ -1,7 +1,20 @@
 <?php
 require_once __DIR__ . '/../db.php';
 
-// Simple one‑time admin creation page. After creating an admin, delete this file.
+// Security check: Lock down setup if an admin already exists
+$admin_exists = false;
+if ($conn && !$conn->connect_error) {
+    $check_admin = $conn->query("SELECT id FROM USERS WHERE role = 'admin' LIMIT 1");
+    if ($check_admin && $check_admin->num_rows > 0) {
+        $admin_exists = true;
+    }
+}
+
+// If an admin already exists, only an authenticated admin can access or setup is locked
+if ($admin_exists && (!is_logged_in() || ($_SESSION['user_role'] ?? '') !== 'admin')) {
+    http_response_code(403);
+    die('<!DOCTYPE html><html><head><title>Setup Locked</title><link rel="stylesheet" href="../style.css"></head><body><div class="auth-wrapper"><div class="auth-card" style="text-align:center;"><h2>🔒 Setup Locked</h2><p style="margin-top:12px;color:var(--text-secondary);">An administrator account already exists. For security reasons, this setup page has been locked.</p><div style="margin-top:20px;"><a href="../login.php" class="btn btn-primary btn-sm">Proceed to Login</a></div></div></div></body></html>');
+}
 
 $success = '';
 $error = '';
