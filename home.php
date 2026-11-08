@@ -82,6 +82,32 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["submit_complaint"])) 
                                 $img_stmt->close();
                             }
                         }
+
+                        // Dispatch email alert to Administration
+                        $admin_sub = "PUCIT Portal - New Complaint Lodged (#{$complaint_id})";
+                        $admin_msg = "A new complaint has been lodged on the PUCIT Complaint Portal.\n\n"
+                                   . "Ticket ID: #{$complaint_id}\n"
+                                   . "Subject: {$title}\n"
+                                   . "Category: {$category}\n"
+                                   . "Priority: {$priority}\n"
+                                   . "Submitted By: " . ($isAnonymous ? "Anonymous (Identity Protected)" : $user_name . " ({$user_email})") . "\n\n"
+                                   . "Description:\n{$description}\n\n"
+                                   . "Review on Admin Panel: http://dev.local/admin/index.php?q={$complaint_id}";
+                        send_system_email(SUPPORT_EMAIL, $admin_sub, $admin_msg);
+
+                        // Confirmation email to complainant
+                        if (!empty($user_email)) {
+                            $user_sub = "PUCIT Portal - Complaint Received (Ticket #{$complaint_id})";
+                            $user_msg = "Dear {$user_name},\n\n"
+                                      . "Your complaint has been successfully recorded by PUCIT Administration.\n\n"
+                                      . "Ticket ID: #{$complaint_id}\n"
+                                      . "Subject: {$title}\n"
+                                      . "Category: {$category}\n"
+                                      . "Status: Pending Review\n\n"
+                                      . "You can track the progress of your grievance at: http://dev.local/home.php\n\n"
+                                      . "Regards,\nPUCIT Administration";
+                            send_system_email($user_email, $user_sub, $user_msg);
+                        }
                     } else {
                         $complaint_error = "Error submitting complaint: " . htmlspecialchars($conn->error);
                     }

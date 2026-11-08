@@ -53,6 +53,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $conn && !$conn->connect_error) {
                 $log->execute();
                 $log->close();
 
+                // Dispatch notification to complainant
+                $notif_stmt = $conn->prepare("SELECT c.title, u.email, u.name FROM complaints c JOIN USERS u ON c.user_id = u.id WHERE c.id = ? LIMIT 1");
+                if ($notif_stmt) {
+                    $notif_stmt->bind_param('i', $complaint_id);
+                    $notif_stmt->execute();
+                    $notif_res = $notif_stmt->get_result();
+                    if ($notif_row = $notif_res->fetch_assoc()) {
+                        $target_email = $notif_row['email'];
+                        $target_name  = $notif_row['name'];
+                        $ticket_title = $notif_row['title'];
+
+                        $notif_sub = "PUCIT Portal - Ticket #{$complaint_id} Status: {$new_status}";
+                        $notif_msg = "Dear {$target_name},\n\n"
+                                   . "Your complaint ticket #{$complaint_id} (\"{$ticket_title}\") has been updated by PUCIT Administration.\n\n"
+                                   . "New Status: {$new_status}\n"
+                                   . (!empty($notes) ? "Administrative Remarks / Notes:\n{$notes}\n\n" : "\n")
+                                   . "You can view complete ticket details on your portal: http://dev.local/home.php\n\n"
+                                   . "Regards,\nPUCIT Administration";
+                        send_system_email($target_email, $notif_sub, $notif_msg);
+                    }
+                    $notif_stmt->close();
+                }
+
                 $action_msg = "Complaint #{$complaint_id} updated to '{$new_status}' successfully.";
             } else {
                 $action_error = "Failed to update complaint: " . htmlspecialchars($conn->error);

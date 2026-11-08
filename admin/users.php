@@ -48,12 +48,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $conn && !$conn->connect_error) {
         if ($target_id <= 0 || strlen($temp_pass) < 6) {
             $error = "Temporary password must be at least 6 characters long.";
         } else {
+            // Fetch target user info
+            $u_stmt = $conn->prepare("SELECT name, email FROM USERS WHERE id = ? LIMIT 1");
+            $target_email = '';
+            $target_name  = 'User';
+            if ($u_stmt) {
+                $u_stmt->bind_param('i', $target_id);
+                $u_stmt->execute();
+                $u_res = $u_stmt->get_result();
+                if ($t_user = $u_res->fetch_assoc()) {
+                    $target_email = $t_user['email'];
+                    $target_name  = $t_user['name'];
+                }
+                $u_stmt->close();
+            }
+
             $hashed = password_hash($temp_pass, PASSWORD_DEFAULT);
             $stmt = $conn->prepare("UPDATE USERS SET password = ? WHERE id = ?");
             if ($stmt) {
                 $stmt->bind_param('si', $hashed, $target_id);
                 if ($stmt->execute()) {
-                    $msg = "Password reset successfully for User #{$target_id}. New temporary password set.";
+                    // Dispatch notification email to user
+                    if (!empty($target_email)) {
+                        $reset_sub = "PUCIT Portal - Your Password Has Been Reset";
+                        $reset_msg = "Dear {$target_name},\n\n"
+                                   . "Your password for the PUCIT Complaint Portal has been reset by the administration.\n\n"
+                                   . "Your new temporary password is:\n"
+                                   . "    {$temp_pass}\n\n"
+                                   . "Please sign in at http://dev.local/login.php and immediately update your password under your Profile settings.\n\n"
+                                   . "Regards,\nPUCIT Administration";
+                        send_system_email($target_email, $reset_sub, $reset_msg);
+                    }
+
+                    $msg = "Password reset successfully for {$target_name}. An official email with the temporary password has been dispatched to {$target_email}.";
                 } else {
                     $error = "Failed to reset password: " . htmlspecialchars($conn->error);
                 }
