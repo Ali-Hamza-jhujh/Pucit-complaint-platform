@@ -12,6 +12,13 @@ $user_email = $_SESSION["user_email"] ?? "";
 $complaint_msg = "";
 $complaint_error = "";
 
+// Flash message on successful submission (Post/Redirect/Get pattern)
+if (isset($_GET['submitted'])) {
+    $sub_id = intval($_GET['submitted']);
+    $complaint_msg = $_SESSION['flash_complaint_msg'] ?? "Your complaint #{$sub_id} has been submitted successfully to PUCIT Administration.";
+    unset($_SESSION['flash_complaint_msg']);
+}
+
 // Handle new complaint submission
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["submit_complaint"])) {
     $csrf = $_POST["csrf_token"] ?? "";
@@ -108,6 +115,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["submit_complaint"])) 
                                       . "Regards,\nPUCIT Administration";
                             send_system_email($user_email, $user_sub, $user_msg);
                         }
+
+                        // Post/Redirect/Get pattern: Redirect to prevent duplicate form resubmissions on page reload
+                        $_SESSION['flash_complaint_msg'] = "Your complaint #{$complaint_id} has been submitted successfully to PUCIT Administration.";
+                        header("Location: home.php?submitted={$complaint_id}");
+                        exit();
                     } else {
                         $complaint_error = "Error submitting complaint: " . htmlspecialchars($conn->error);
                     }
