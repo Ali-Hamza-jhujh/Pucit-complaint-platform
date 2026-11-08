@@ -24,7 +24,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $error = "Please fill in all required fields.";
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = "Please enter a valid email address.";
-    } elseif (strlen($pass) < 6) {
+    } elseif (!in_array(substr(strrchr($email, "@"), 1), ALLOWED_EMAIL_DOMAINS)) {
+    $error = "Registration is limited to official PUCIT email addresses.";
+} elseif (strlen($pass) < 6) {
         $error = "Password must be at least 6 characters long.";
     } elseif ($pass !== $c_pass) {
         $error = "Password and Confirm Password do not match.";

@@ -55,6 +55,20 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 }
 
                 if ($password_matched) {
+    // Regenerate session ID to prevent fixation
+    session_regenerate_id(true);
+    // Set session variables, including role
+    $_SESSION["user_id"] = $user["id"];
+    $_SESSION["user_name"] = $user["name"];
+    $_SESSION["user_email"] = $user["email"];
+    $_SESSION["user_role"] = $user["role"] ?? "student";
+    // Redirect based on role
+    if ($_SESSION["user_role"] === "admin") {
+        header("Location: admin/index.php");
+    } else {
+        header("Location: home.php");
+    }
+    exit();
                     // Set session variables
                     $_SESSION["user_id"] = $user["id"];
                     $_SESSION["user_name"] = $user["name"];
