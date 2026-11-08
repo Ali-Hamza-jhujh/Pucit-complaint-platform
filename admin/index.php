@@ -67,29 +67,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $conn && !$conn->connect_error) {
                 $log->close();
 
                 // Dispatch notification to complainant
-                $notif_stmt = $conn->prepare("SELECT c.title, u.email, u.name FROM complaints c JOIN USERS u ON c.user_id = u.id WHERE c.id = ? LIMIT 1");
+                $email_dispatched_to = '';
+                $notif_stmt = $conn->prepare("SELECT c.title, u.email, u.name FROM complaints c LEFT JOIN USERS u ON c.user_id = u.id WHERE c.id = ? LIMIT 1");
                 if ($notif_stmt) {
                     $notif_stmt->bind_param('i', $complaint_id);
                     $notif_stmt->execute();
                     $notif_res = $notif_stmt->get_result();
                     if ($notif_row = $notif_res->fetch_assoc()) {
-                        $target_email = $notif_row['email'];
-                        $target_name  = $notif_row['name'];
-                        $ticket_title = $notif_row['title'];
+                        $target_email = $notif_row['email'] ?? '';
+                        $target_name  = $notif_row['name'] ?? 'User';
+                        $ticket_title = $notif_row['title'] ?? 'Ticket';
 
-                        $notif_sub = "PUCIT Portal - Ticket #{$complaint_id} Status: {$new_status}";
-                        $notif_msg = "Dear {$target_name},\n\n"
-                                   . "Your complaint ticket #{$complaint_id} (\"{$ticket_title}\") has been updated by PUCIT Administration.\n\n"
-                                   . "New Status: {$new_status}\n"
-                                   . (!empty($notes) ? "Administrative Remarks / Notes:\n{$notes}\n\n" : "\n")
-                                   . "You can view complete ticket details on your portal: http://dev.local/home.php\n\n"
-                                   . "Regards,\nPUCIT Administration";
-                        send_system_email($target_email, $notif_sub, $notif_msg);
+                        if (!empty($target_email)) {
+                            $notif_sub = "PUCIT Portal - Ticket #{$complaint_id} Status: {$new_status}";
+                            $notif_msg = "Dear {$target_name},\n\n"
+                                       . "Your complaint ticket #{$complaint_id} (\"{$ticket_title}\") has been updated by PUCIT Administration.\n\n"
+                                       . "New Status: {$new_status}\n"
+                                       . (!empty($notes) ? "Administrative Remarks / Notes:\n{$notes}\n\n" : "\n")
+                                       . "You can view complete ticket details on your portal: http://dev.local/home.php\n\n"
+                                       . "Regards,\nPUCIT Administration";
+                            $sent = send_system_email($target_email, $notif_sub, $notif_msg);
+                            if ($sent) {
+                                $email_dispatched_to = $target_email;
+                            }
+                        }
                     }
                     $notif_stmt->close();
                 }
 
-                $_SESSION['flash_action_msg'] = "Complaint #{$complaint_id} updated to '{$new_status}' successfully.";
+                if (!empty($email_dispatched_to)) {
+                    $_SESSION['flash_action_msg'] = "Complaint #{$complaint_id} updated to '{$new_status}' successfully. Notification email dispatched to <strong>" . htmlspecialchars($email_dispatched_to) . "</strong>.";
+                } else {
+                    $_SESSION['flash_action_msg'] = "Complaint #{$complaint_id} updated to '{$new_status}' successfully.";
+                }
             } else {
                 $_SESSION['flash_action_error'] = "Failed to update complaint: " . htmlspecialchars($conn->error);
             }

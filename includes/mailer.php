@@ -114,6 +114,8 @@ function send_system_email(string $to, string $subject, string $body, string $re
         $read();
         fclose($socket);
 
+        log_email_locally($to, $subject, $body, $reply_to, "DISPATCHED VIA GMAIL SMTP (250 OK)");
+
         return true;
     } catch (\Throwable $e) {
         log_email_locally($to, $subject, $body, $reply_to, "Exception: " . $e->getMessage());
