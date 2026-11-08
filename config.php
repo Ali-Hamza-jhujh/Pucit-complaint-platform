@@ -77,6 +77,9 @@ define('SESSION_LIFETIME',  7200);   // 2 hours; 0 = until browser closes
 define('APP_ENV',       'development');   // Switch to 'production' before going live
 define('SHOW_ERRORS',   APP_ENV === 'development');
 
+// Disable PCRE JIT to avoid memory allocation warnings in hardened Linux environments
+@ini_set('pcre.jit', '0');
+
 if (SHOW_ERRORS) {
     ini_set('display_errors', 1);
     error_reporting(E_ALL);

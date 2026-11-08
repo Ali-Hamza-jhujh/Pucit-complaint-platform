@@ -54,11 +54,17 @@ if ($conn && !$conn->connect_error) {
         created_at TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
-    // Migration: add new columns to any pre-existing USERS table
-    @$conn->query("ALTER TABLE USERS ADD COLUMN IF NOT EXISTS
-                   role      ENUM('student','admin') NOT NULL DEFAULT 'student'");
-    @$conn->query("ALTER TABLE USERS ADD COLUMN IF NOT EXISTS
-                   is_active TINYINT(1) NOT NULL DEFAULT 1");
+    // Safe cross-version column migration helper
+    $add_col = function($table, $column, $definition) use ($conn) {
+        $chk = $conn->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '{$table}' AND COLUMN_NAME = '{$column}'");
+        if ($chk && $chk->num_rows === 0) {
+            $conn->query("ALTER TABLE `{$table}` ADD `{$column}` {$definition}");
+        }
+    };
+
+    // Migration: ensure new columns exist in USERS table
+    $add_col('USERS', 'role', "ENUM('student','admin') NOT NULL DEFAULT 'student'");
+    $add_col('USERS', 'is_active', "TINYINT(1) NOT NULL DEFAULT 1");
     @$conn->query("ALTER TABLE USERS MODIFY COLUMN password VARCHAR(255) NOT NULL");
 
     // ================================================================
@@ -127,23 +133,28 @@ if ($conn && !$conn->connect_error) {
         updated_at   TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
-    // Migration: add new columns to any pre-existing complaints table
-    @$conn->query("ALTER TABLE complaints
-                   ADD COLUMN IF NOT EXISTS is_anonymous TINYINT(1) NOT NULL DEFAULT 0");
-    @$conn->query("ALTER TABLE complaints
-                   ADD COLUMN IF NOT EXISTS image_path   VARCHAR(255) DEFAULT NULL");
-    @$conn->query("ALTER TABLE complaints
-                   ADD COLUMN IF NOT EXISTS admin_notes  TEXT DEFAULT NULL");
-    @$conn->query("ALTER TABLE complaints
-                   ADD COLUMN IF NOT EXISTS category_id  INT DEFAULT NULL");
-    @$conn->query("ALTER TABLE complaints
-                   ADD COLUMN IF NOT EXISTS updated_at   TIMESTAMP
-                   DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
+    // Migration: ensure required columns exist in complaints table
+    $add_col('complaints', 'is_anonymous', "TINYINT(1) NOT NULL DEFAULT 1");
+    $add_col('complaints', 'image_path', "VARCHAR(255) DEFAULT NULL");
+    $add_col('complaints', 'admin_notes', "TEXT DEFAULT NULL");
+    $add_col('complaints', 'category_id', "INT DEFAULT NULL");
+    $add_col('complaints', 'updated_at', "TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
 
     // Data migration: normalize legacy status value
     // Old value 'In Progress' → new canonical value 'In Review'
     @$conn->query("UPDATE complaints SET status = 'In Review'
                    WHERE status = 'In Progress'");
+
+    // NFR 3.3 Cascading Safeguards: Foreign key constraint to prevent student profile deletion with active complaints
+    $fk_user = $conn->query("SELECT CONSTRAINT_NAME FROM information_schema.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'complaints' AND CONSTRAINT_NAME = 'fk_complaints_user'");
+    if ($fk_user && $fk_user->num_rows === 0) {
+        @$conn->query("ALTER TABLE complaints ADD CONSTRAINT fk_complaints_user FOREIGN KEY (user_id) REFERENCES USERS(id) ON DELETE RESTRICT");
+    }
+
+    $fk_cat = $conn->query("SELECT CONSTRAINT_NAME FROM information_schema.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'complaints' AND CONSTRAINT_NAME = 'fk_complaints_category'");
+    if ($fk_cat && $fk_cat->num_rows === 0) {
+        @$conn->query("ALTER TABLE complaints ADD CONSTRAINT fk_complaints_category FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL");
+    }
 
     // ================================================================
     // TABLE: admin_actions
