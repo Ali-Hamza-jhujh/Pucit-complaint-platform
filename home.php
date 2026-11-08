@@ -68,7 +68,7 @@ $resolved_count = 0;
 $complaints_list = [];
 
 if ($conn && !$conn->connect_error) {
-    // Stats query
+    // Stats query (overall)
     $st = $conn->query("SELECT 
         COUNT(*) as total,
         SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) as pending,
