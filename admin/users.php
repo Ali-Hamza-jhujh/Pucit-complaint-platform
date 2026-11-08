@@ -68,37 +68,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $conn && !$conn->connect_error) {
             if ($stmt) {
                 $stmt->bind_param('si', $hashed, $target_id);
                 if ($stmt->execute()) {
-                    // Dispatch notification email to user
+                    // Dispatch temporary password email directly and exclusively to the target user
                     if (!empty($target_email)) {
-                        $reset_sub = "PUCIT Portal - Your Temporary Password & Security Reminder";
+                        $reset_sub = "PUCIT Portal - Your Temporary Password & Security Instructions";
                         $reset_msg = "Dear {$target_name},\n\n"
-                                   . "Your account password for the PUCIT Complaint Portal has been reset by the administration.\n\n"
+                                   . "Your account password for the PUCIT Complaint Portal has been reset by college administration.\n\n"
                                    . "====================================================\n"
                                    . "YOUR TEMPORARY PASSWORD: {$temp_pass}\n"
                                    . "====================================================\n\n"
-                                   . "⚠️ IMPORTANT SECURITY REMINDER:\n"
+                                   . "⚠️ MANDATORY SECURITY INSTRUCTION:\n"
                                    . "Please change this temporary password immediately after logging in!\n\n"
-                                   . "How to change your password:\n"
-                                   . "1. Sign in with the temporary password above at: http://dev.local/login.php\n"
-                                   . "2. Click on 'Profile' in the top menu.\n"
-                                   . "3. Enter this temporary password and choose your new personal permanent password.\n\n"
-                                   . "If you have any questions or did not request this, please contact IT Support at " . SUPPORT_EMAIL . ".\n\n"
+                                   . "Step-by-step instructions to update your password:\n"
+                                   . "1. Go to the login page: http://dev.local/login.php\n"
+                                   . "2. Sign in using your official email ({$target_email}) and the temporary password above.\n"
+                                   . "3. Click on 'Profile' in the top navigation bar.\n"
+                                   . "4. In the 'Change Password' section, enter this temporary password as your current password, and choose your new personal permanent password.\n\n"
+                                   . "If you did not request this password reset or suspect unauthorized activity, please contact PUCIT IT Support at " . SUPPORT_EMAIL . ".\n\n"
                                    . "Regards,\nPUCIT Administration\nPunjab University College of Information Technology";
                         send_system_email($target_email, $reset_sub, $reset_msg);
-
-                        // Also send copy to Admin so admin has a record in their Gmail
-                        if ($target_email !== SUPPORT_EMAIL) {
-                            $admin_copy_sub = "PUCIT Portal - Password Reset Issued for {$target_name} (#{$target_id})";
-                            $admin_copy_msg = "Administrative Notice:\n\n"
-                                            . "You reset the password for User #{$target_id} ({$target_name} - {$target_email}).\n"
-                                            . "Temporary Password Assigned: {$temp_pass}\n"
-                                            . "Timestamp: " . date("Y-m-d H:i:s") . "\n\n"
-                                            . "Regards,\nPUCIT Portal";
-                            send_system_email(SUPPORT_EMAIL, $admin_copy_sub, $admin_copy_msg);
-                        }
                     }
 
-                    $msg = "Password reset successfully for {$target_name}. Temporary Password: <strong>" . htmlspecialchars($temp_pass) . "</strong> (Email dispatched to {$target_email}).";
+                    $msg = "Password reset successfully for {$target_name}. An official email with the temporary password has been dispatched to <strong>" . htmlspecialchars($target_email) . "</strong>. (Assigned: <code>" . htmlspecialchars($temp_pass) . "</code>)";
                 } else {
                     $error = "Failed to reset password: " . htmlspecialchars($conn->error);
                 }
