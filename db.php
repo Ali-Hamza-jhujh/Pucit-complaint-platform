@@ -32,6 +32,12 @@ if ($conn && !$conn->connect_error) {
 
     $conn->set_charset('utf8mb4');
 
+    // Only run DDL bootstrap if tables are not yet initialized
+    $table_check = $conn->query("SHOW TABLES LIKE 'USERS'");
+    $schema_initialized = ($table_check && $table_check->num_rows > 0);
+
+    if (!$schema_initialized) {
+
     // ================================================================
     // TABLE: USERS
     // Stores student and admin accounts.
@@ -184,6 +190,8 @@ if ($conn && !$conn->connect_error) {
         window_start TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
         INDEX idx_identifier_action (identifier, action)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    } // end initial schema creation
 
 } // end schema bootstrap
 
