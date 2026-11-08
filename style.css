@@ -914,3 +914,23 @@ line-height: 1.4;
   outline: none;
   border-color: var(--secondary);
 }
+
+/* =========================================================
+   PAGINATION STYLES
+   ========================================================= */
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 20px;
+  border-top: 1px solid var(--border);
+  font-size: 13.5px;
+  color: var(--text-secondary);
+  background: var(--surface);
+}
+
+.pagination-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}

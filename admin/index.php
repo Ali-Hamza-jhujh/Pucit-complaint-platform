@@ -109,20 +109,44 @@ if ($search_query !== '') {
 
 $where_sql = count($where_clauses) > 0 ? 'WHERE ' . implode(' AND ', $where_clauses) : '';
 
+// Pagination calculation
+$per_page = 15;
+$page = max(1, intval($_GET['page'] ?? 1));
+$total_rows = 0;
+
+if ($conn && !$conn->connect_error) {
+    $count_sql = "SELECT COUNT(*) FROM complaints c LEFT JOIN USERS u ON c.user_id = u.id {$where_sql}";
+    $c_stmt = $conn->prepare($count_sql);
+    if ($c_stmt) {
+        if (!empty($bind_values)) {
+            $c_stmt->bind_param($bind_types, ...$bind_values);
+        }
+        $c_stmt->execute();
+        $c_stmt->bind_result($total_rows);
+        $c_stmt->fetch();
+        $c_stmt->close();
+    }
+}
+
+$total_pages = max(1, (int)ceil($total_rows / $per_page));
+if ($page > $total_pages) $page = $total_pages;
+$offset = ($page - 1) * $per_page;
+
 $sql = "SELECT c.*, u.name AS student_name, u.email AS student_email
         FROM complaints c
         LEFT JOIN USERS u ON c.user_id = u.id
         {$where_sql}
         ORDER BY c.id DESC
-        LIMIT 50";
+        LIMIT ? OFFSET ?";
+
+$bind_types_paged = $bind_types . 'ii';
+$bind_values_paged = array_merge($bind_values, [$per_page, $offset]);
 
 $complaints = [];
 if ($conn && !$conn->connect_error) {
     $stmt = $conn->prepare($sql);
     if ($stmt) {
-        if (!empty($bind_values)) {
-            $stmt->bind_param($bind_types, ...$bind_values);
-        }
+        $stmt->bind_param($bind_types_paged, ...$bind_values_paged);
         $stmt->execute();
         $result = $stmt->get_result();
         while ($r = $result->fetch_assoc()) {
@@ -325,6 +349,28 @@ if ($conn && !$conn->connect_error) {
                             </tbody>
                         </table>
                     </div>
+
+                    <?php if ($total_pages > 1): ?>
+                    <div class="pagination">
+                        <div>
+                            Showing page <strong><?= $page ?></strong> of <strong><?= $total_pages ?></strong> (<?= $total_rows ?> total)
+                        </div>
+                        <div class="pagination-controls">
+                            <?php
+                                $query_params = $_GET;
+                                unset($query_params['page']);
+                                $qs = http_build_query($query_params);
+                                $base_url = 'index.php?' . ($qs ? $qs . '&' : '');
+                            ?>
+                            <?php if ($page > 1): ?>
+                                <a href="<?= $base_url ?>page=<?= $page - 1 ?>" class="btn btn-outline btn-sm">&laquo; Previous</a>
+                            <?php endif; ?>
+                            <?php if ($page < $total_pages): ?>
+                                <a href="<?= $base_url ?>page=<?= $page + 1 ?>" class="btn btn-outline btn-sm">Next &raquo;</a>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <?php endif; ?>
                 <?php endif; ?>
             </div>
         </div>
