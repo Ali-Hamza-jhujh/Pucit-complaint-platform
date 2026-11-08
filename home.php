@@ -91,6 +91,15 @@ if ($conn && !$conn->connect_error) {
             $complaints_list[] = $r;
         }
     }
+
+    // Load active categories from database
+    $categories_list = [];
+    $cat_res = $conn->query("SELECT id, name FROM categories WHERE is_active = 1 ORDER BY sort_order ASC, name ASC");
+    if ($cat_res) {
+        while ($cat = $cat_res->fetch_assoc()) {
+            $categories_list[] = $cat;
+        }
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -299,15 +308,12 @@ if ($conn && !$conn->connect_error) {
                             <label class="form-label" for="category">Department / Category</label>
                             <select name="category" id="category" class="form-select" required>
                                 <option value="" disabled selected>Select category...</option>
-                                <option value="Computer Labs & Systems">Computer Labs & Systems</option>
-                                <option value="Campus Wi-Fi & Internet">Campus Wi-Fi & Internet</option>
-                                <option value="Classroom & Projectors">Classroom & Projectors</option>
-                                <option value="Air Conditioning & Electricity">Air Conditioning & Electricity</option>
-                                <option value="Examination & Records">Examination & Records</option>
-                                <option value="Library Services">Library Services</option>
-                                <option value="Cafeteria & Cleanliness">Cafeteria & Cleanliness</option>
-                                <option value="Faculty & Academics">Faculty & Academics</option>
-                                <option value="Other / General">Other / General</option>
+                                <?php foreach ($categories_list as $cat): ?>
+                                    <option value="<?= htmlspecialchars($cat['name']) ?>"><?= htmlspecialchars($cat['name']) ?></option>
+                                <?php endforeach; ?>
+                                <?php if (empty($categories_list)): ?>
+                                    <option value="Other / General">Other / General</option>
+                                <?php endif; ?>
                             </select>
                         </div>
 

@@ -50,12 +50,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 if ($insert_stmt) {
                     $insert_stmt->bind_param("sss", $name, $email, $hashed_pass);
                     if ($insert_stmt->execute()) {
-                        // Automatically log in the user and redirect to home.php
-                        $_SESSION["user_id"] = $insert_stmt->insert_id;
-                        $_SESSION["user_name"] = $name;
-                        $_SESSION["user_email"] = $email;
-                        
-                        header("Location: home.php?welcome=1");
+                        // Redirect to login page with success message
+                        header("Location: login.php?registered=1");
                         exit();
                     } else {
                         $error = "Failed to create account: " . htmlspecialchars($conn->error);

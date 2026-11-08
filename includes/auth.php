@@ -107,25 +107,29 @@ if (!function_exists('check_rate_limit')) {
      * @return bool True if under limit, false if limit exceeded
      */
     function check_rate_limit(string $identifier, string $action, int $limit, int $window_seconds): bool {
-        global $conn; // Assuming $conn is the mysqli connection from db.php
-        $now = time();
-        $window_start = $now - $window_seconds;
+        global $conn;
+        if (!$conn || $conn->connect_error) return true; // fail-open if DB unavailable
+
+        $cutoff = date('Y-m-d H:i:s', time() - $window_seconds);
 
         // Clean up old records
-        $stmt = $conn->prepare('DELETE FROM rate_limits WHERE timestamp < ?');
-        $stmt->bind_param('i', $window_start);
-        $stmt->execute();
-        $stmt->close();
+        $stmt = $conn->prepare('DELETE FROM rate_limits WHERE window_start < ?');
+        if ($stmt) {
+            $stmt->bind_param('s', $cutoff);
+            $stmt->execute();
+            $stmt->close();
+        }
 
         // Count recent attempts
-        $stmt = $conn->prepare('SELECT COUNT(*) FROM rate_limits WHERE identifier = ? AND action = ? AND timestamp >= ?');
-        $stmt->bind_param('ssi', $identifier, $action, $window_start);
+        $stmt = $conn->prepare('SELECT SUM(attempts) FROM rate_limits WHERE identifier = ? AND action = ? AND window_start >= ?');
+        if (!$stmt) return true;
+        $stmt->bind_param('sss', $identifier, $action, $cutoff);
         $stmt->execute();
         $stmt->bind_result($cnt);
         $stmt->fetch();
         $stmt->close();
 
-        return $cnt < $limit;
+        return ($cnt ?? 0) < $limit;
     }
 }
 
@@ -138,10 +142,14 @@ if (!function_exists('increment_rate_limit')) {
      */
     function increment_rate_limit(string $identifier, string $action): void {
         global $conn;
-        $now = time();
-        $stmt = $conn->prepare('INSERT INTO rate_limits (identifier, action, timestamp) VALUES (?, ?, ?)');
-        $stmt->bind_param('ssi', $identifier, $action, $now);
-        $stmt->execute();
-        $stmt->close();
+        if (!$conn || $conn->connect_error) return;
+
+        $now = date('Y-m-d H:i:s');
+        $stmt = $conn->prepare('INSERT INTO rate_limits (identifier, action, attempts, window_start) VALUES (?, ?, 1, ?)');
+        if ($stmt) {
+            $stmt->bind_param('sss', $identifier, $action, $now);
+            $stmt->execute();
+            $stmt->close();
+        }
     }
 }
