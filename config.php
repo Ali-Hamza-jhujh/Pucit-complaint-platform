@@ -80,6 +80,21 @@ define('SHOW_ERRORS',   APP_ENV === 'development');
 // Disable PCRE JIT to avoid memory allocation warnings in hardened Linux environments
 @ini_set('pcre.jit', '0');
 
+// Multibyte string polyfill if ext-mbstring is not installed in environment
+if (!function_exists('mb_strimwidth')) {
+    function mb_strimwidth(string $string, int $start, int $width, string $trim_marker = '', ?string $encoding = null): string {
+        $len = strlen($string);
+        if ($len <= $width) {
+            return (string)substr($string, $start);
+        }
+        $marker_len = strlen($trim_marker);
+        if ($width <= $marker_len) {
+            return (string)substr($string, $start, $width);
+        }
+        return (string)substr($string, $start, $width - $marker_len) . $trim_marker;
+    }
+}
+
 if (SHOW_ERRORS) {
     ini_set('display_errors', 1);
     error_reporting(E_ALL);
