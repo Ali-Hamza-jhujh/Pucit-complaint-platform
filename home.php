@@ -271,6 +271,7 @@ if ($conn && !$conn->connect_error) {
                                         <th>Priority</th>
                                         <th>Status</th>
                                         <th>Date</th>
+                                        <th>Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -298,6 +299,9 @@ if ($conn && !$conn->connect_error) {
                                                 <span class="badge <?= $badge_cls ?>"><?= htmlspecialchars($c["status"]) ?></span>
                                             </td>
                                             <td><small style="color: var(--text-muted);"><?= date("M d, Y", strtotime($c["created_at"])) ?></small></td>
+                                            <td>
+                                                <button type="button" class="btn btn-outline btn-sm" onclick="openDetail(<?= $c['id'] ?>)">View</button>
+                                            </td>
                                         </tr>
                                     <?php endforeach; ?>
                                 </tbody>
@@ -391,6 +395,106 @@ if ($conn && !$conn->connect_error) {
             &copy; <?= date("Y") ?> PUCIT (Punjab University College of Information Technology) — Student Grievance Redressal System.
         </div>
     </div>
+
+    <!-- Complaint Detail Modals for Students -->
+    <?php foreach ($complaints_list as $c): ?>
+    <div class="detail-modal" id="modal-<?= $c['id'] ?>">
+        <div class="detail-card">
+            <button class="btn-close-modal" onclick="closeDetail(<?= $c['id'] ?>)">&times;</button>
+            <h3>Ticket #<?= $c['id'] ?> — <?= htmlspecialchars($c['title']) ?></h3>
+
+            <div class="detail-row">
+                <div class="detail-label">Department / Category</div>
+                <div class="detail-value"><?= htmlspecialchars($c['category']) ?></div>
+            </div>
+
+            <div class="detail-row">
+                <div class="detail-label">Status</div>
+                <div class="detail-value">
+                    <?php
+                        $st_v = strtolower($c['status'] ?? 'pending');
+                        $badge_c = 'badge-pending';
+                        if ($st_v === 'in review') $badge_c = 'badge-progress';
+                        if ($st_v === 'resolved') $badge_c = 'badge-resolved';
+                        if ($st_v === 'dismissed') $badge_c = 'badge-high';
+                    ?>
+                    <span class="badge <?= $badge_c ?>"><?= htmlspecialchars($c['status']) ?></span>
+                </div>
+            </div>
+
+            <div class="detail-row">
+                <div class="detail-label">Priority</div>
+                <div class="detail-value"><?= htmlspecialchars($c['priority']) ?></div>
+            </div>
+
+            <div class="detail-row">
+                <div class="detail-label">Submission Date</div>
+                <div class="detail-value"><?= date('F d, Y — h:i A', strtotime($c['created_at'])) ?></div>
+            </div>
+
+            <div class="detail-row">
+                <div class="detail-label">Description</div>
+                <div class="detail-value" style="white-space: pre-wrap;"><?= htmlspecialchars($c['description']) ?></div>
+            </div>
+
+            <?php if (!empty($c['image_path'])): ?>
+            <div class="detail-row">
+                <div class="detail-label">Attached Photo</div>
+                <img src="<?= htmlspecialchars(ltrim($c['image_path'], '/')) ?>" alt="Attached evidence" class="complaint-img">
+            </div>
+            <?php endif; ?>
+
+            <?php if (!empty($c['admin_notes'])): ?>
+            <div class="admin-response-box">
+                <h4>
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>Administrative Response</span>
+                </h4>
+                <div style="font-size: 13.5px; color: #166534; white-space: pre-wrap;"><?= htmlspecialchars($c['admin_notes']) ?></div>
+            </div>
+            <?php else: ?>
+            <div style="margin-top: 16px; padding: 12px; background: #f8fafc; border-radius: var(--radius-sm); font-size: 13px; color: var(--text-muted);">
+                ℹ️ No administrative notes have been logged for this ticket yet.
+            </div>
+            <?php endif; ?>
+        </div>
+    </div>
+    <?php endforeach; ?>
+
+<script>
+function openDetail(id) {
+    var modal = document.getElementById('modal-' + id);
+    if (modal) {
+        modal.classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+}
+function closeDetail(id) {
+    var modal = document.getElementById('modal-' + id);
+    if (modal) {
+        modal.classList.remove('open');
+        document.body.style.overflow = '';
+    }
+}
+document.querySelectorAll('.detail-modal').forEach(function(modal) {
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            modal.classList.remove('open');
+            document.body.style.overflow = '';
+        }
+    });
+});
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        document.querySelectorAll('.detail-modal.open').forEach(function(m) {
+            m.classList.remove('open');
+        });
+        document.body.style.overflow = '';
+    }
+});
+</script>
 
 </body>
 </html>
