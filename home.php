@@ -52,41 +52,45 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["submit_complaint"])) 
             // Determine anonymity flag
             $isAnonymous = isset($_POST['anonymous']) ? 1 : 0;
 
-            // Lookup category ID if matching category exists
-            $category_id = null;
-            $cat_stmt = $conn->prepare("SELECT id FROM categories WHERE name = ? LIMIT 1");
-            if ($cat_stmt) {
-                $cat_stmt->bind_param("s", $category);
-                $cat_stmt->execute();
-                $cat_stmt->bind_result($found_cid);
-                if ($cat_stmt->fetch()) {
-                    $category_id = $found_cid;
-                }
-                $cat_stmt->close();
-            }
-
-            $ins = $conn->prepare("INSERT INTO complaints (user_id, user_name, title, category_id, category, description, priority, status, image_path, is_anonymous) VALUES (?, ?, ?, ?, ?, ?, ?, 'Pending', ?, ?)");
-            if ($ins) {
-                $ins->bind_param("isisssssi", $user_id, $user_name, $title, $category_id, $category, $description, $priority, $image_path, $isAnonymous);
-                if ($ins->execute()) {
-                    $complaint_id = $ins->insert_id;
-                    $complaint_msg = "Your complaint #{$complaint_id} has been submitted successfully to PUCIT Administration.";
-
-                    // Also store attachment metadata if an image was uploaded
-                    if ($image_path && isset($orig_name, $file_size, $mime_type)) {
-                        $img_stmt = $conn->prepare("INSERT INTO complaint_images (complaint_id, file_path, original_name, file_size, mime_type) VALUES (?, ?, ?, ?, ?)");
-                        if ($img_stmt) {
-                            $img_stmt->bind_param("issis", $complaint_id, $image_path, $orig_name, $file_size, $mime_type);
-                            $img_stmt->execute();
-                            $img_stmt->close();
-                        }
+            if (empty($complaint_error)) {
+                // Lookup category ID if matching category exists
+                $category_id = null;
+                $cat_stmt = $conn->prepare("SELECT id FROM categories WHERE name = ? LIMIT 1");
+                if ($cat_stmt) {
+                    $cat_stmt->bind_param("s", $category);
+                    $cat_stmt->execute();
+                    $cat_stmt->bind_result($found_cid);
+                    if ($cat_stmt->fetch()) {
+                        $category_id = $found_cid;
                     }
-                } else {
-                    $complaint_error = "Error submitting complaint: " . htmlspecialchars($conn->error);
+                    $cat_stmt->close();
                 }
-                $ins->close();
+
+                $ins = $conn->prepare("INSERT INTO complaints (user_id, user_name, title, category_id, category, description, priority, status, image_path, is_anonymous) VALUES (?, ?, ?, ?, ?, ?, ?, 'Pending', ?, ?)");
+                if ($ins) {
+                    $ins->bind_param("ississssi", $user_id, $user_name, $title, $category_id, $category, $description, $priority, $image_path, $isAnonymous);
+                    if ($ins->execute()) {
+                        $complaint_id = $ins->insert_id;
+                        $complaint_msg = "Your complaint #{$complaint_id} has been submitted successfully to PUCIT Administration.";
+
+                        // Also store attachment metadata if an image was uploaded
+                        if ($image_path && isset($orig_name, $file_size, $mime_type)) {
+                            $img_stmt = $conn->prepare("INSERT INTO complaint_images (complaint_id, file_path, original_name, file_size, mime_type) VALUES (?, ?, ?, ?, ?)");
+                            if ($img_stmt) {
+                                $img_stmt->bind_param("issis", $complaint_id, $image_path, $orig_name, $file_size, $mime_type);
+                                $img_stmt->execute();
+                                $img_stmt->close();
+                            }
+                        }
+                    } else {
+                        $complaint_error = "Error submitting complaint: " . htmlspecialchars($conn->error);
+                    }
+                    $ins->close();
+                } else {
+                    $complaint_error = "Statement preparation error: " . htmlspecialchars($conn->error);
+                }
             }
-    }
+        }
 }
 
 // Fetch stats and complaints
