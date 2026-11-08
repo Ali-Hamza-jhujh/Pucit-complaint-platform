@@ -28,7 +28,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $error = "Database connection error. Please ensure MySQL is active (sudo service mysql start).";
     } else {
         // Prepare secure statement to look up user
-        $stmt = $conn->prepare("SELECT id, name, email, password, role FROM USERS WHERE email = ? LIMIT 1");
+        $stmt = $conn->prepare("SELECT id, name, email, password, role, is_active FROM USERS WHERE email = ? LIMIT 1");
         
         if ($stmt) {
             $stmt->bind_param("s", $email);
@@ -55,20 +55,24 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 }
 
                 if ($password_matched) {
-                    // Regenerate session ID to prevent fixation
-                    session_regenerate_id(true);
-                    // Set session variables, including role
-                    $_SESSION["user_id"] = $user["id"];
-                    $_SESSION["user_name"] = $user["name"];
-                    $_SESSION["user_email"] = $user["email"];
-                    $_SESSION["user_role"] = $user["role"] ?? "student";
-                    // Redirect based on role
-                    if ($_SESSION["user_role"] === "admin") {
-                        header("Location: admin/index.php");
+                    if ((int)($user["is_active"] ?? 1) === 0) {
+                        $error = "Your account has been deactivated. Please contact PUCIT administration.";
                     } else {
-                        header("Location: home.php");
+                        // Regenerate session ID to prevent fixation
+                        session_regenerate_id(true);
+                        // Set session variables, including role
+                        $_SESSION["user_id"] = $user["id"];
+                        $_SESSION["user_name"] = $user["name"];
+                        $_SESSION["user_email"] = $user["email"];
+                        $_SESSION["user_role"] = $user["role"] ?? "student";
+                        // Redirect based on role
+                        if ($_SESSION["user_role"] === "admin") {
+                            header("Location: admin/index.php");
+                        } else {
+                            header("Location: home.php");
+                        }
+                        exit();
                     }
-                    exit();
                 } else {
                     $error = "Invalid email or password. Please try again.";
                 }
