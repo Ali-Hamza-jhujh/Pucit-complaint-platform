@@ -337,6 +337,12 @@ if ($conn && !$conn->connect_error) {
                         </div>
 
                         <div class="form-group">
+                            <label class="form-label" for="image">Attach Image (optional)</label>
+                            <input type="file" name="image" id="image" class="form-control" style="padding-left: 14px;" accept=".jpg,.jpeg,.png,.webp">
+                            <small style="color: var(--text-muted); font-size: 12px;">JPG, PNG or WebP — max 5 MB</small>
+                        </div>
+
+                        <div class="form-group">
     <div class="form-check">
         <input class="form-check-input" type="checkbox" name="anonymous" id="anonymous" value="1">
         <label class="form-check-label" for="anonymous">Submit anonymously (your name will not be shown)</label>
