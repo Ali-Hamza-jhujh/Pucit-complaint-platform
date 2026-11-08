@@ -91,13 +91,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["submit_complaint"])) 
                         }
 
                         // Dispatch email alert to Administration
+                        $user_role_label = ($user_role === 'teacher') ? 'Teacher / Faculty' : 'Student';
                         $admin_sub = "PUCIT Portal - New Complaint Lodged (#{$complaint_id})";
                         $admin_msg = "A new complaint has been lodged on the PUCIT Complaint Portal.\n\n"
                                    . "Ticket ID: #{$complaint_id}\n"
                                    . "Subject: {$title}\n"
                                    . "Category: {$category}\n"
                                    . "Priority: {$priority}\n"
-                                   . "Submitted By: " . ($isAnonymous ? "Anonymous (Identity Protected)" : $user_name . " ({$user_email})") . "\n\n"
+                                   . "Complainant Role: {$user_role_label}\n"
+                                   . "Submitted By: " . ($isAnonymous ? "Anonymous (Identity Protected in Public Feed)" : $user_name . " ({$user_email})") . "\n\n"
                                    . "Description:\n{$description}\n\n"
                                    . "Review on Admin Panel: http://dev.local/admin/index.php?q={$complaint_id}";
                         send_system_email(SUPPORT_EMAIL, $admin_sub, $admin_msg);
@@ -174,25 +176,25 @@ if ($conn && !$conn->connect_error) {
     $bind_params = [];
 
     if ($view_scope === 'my') {
-        $where[] = "user_id = ?";
+        $where[] = "c.user_id = ?";
         $bind_types .= 'i';
         $bind_params[] = $user_id;
     }
 
     if ($filter_status !== '' && in_array($filter_status, $valid_statuses)) {
-        $where[] = "status = ?";
+        $where[] = "c.status = ?";
         $bind_types .= 's';
         $bind_params[] = $filter_status;
     }
 
     if ($filter_category !== '') {
-        $where[] = "category = ?";
+        $where[] = "c.category = ?";
         $bind_types .= 's';
         $bind_params[] = $filter_category;
     }
 
     if ($search_query !== '') {
-        $where[] = "(title LIKE ? OR description LIKE ?)";
+        $where[] = "(c.title LIKE ? OR c.description LIKE ?)";
         $bind_types .= 'ss';
         $like = "%{$search_query}%";
         $bind_params[] = $like;
@@ -204,7 +206,7 @@ if ($conn && !$conn->connect_error) {
     // Pagination calculation
     $per_page = 10;
     $page = max(1, intval($_GET['page'] ?? 1));
-    $cnt_stmt = $conn->prepare("SELECT COUNT(*) AS cnt FROM complaints " . $where_sql);
+    $cnt_stmt = $conn->prepare("SELECT COUNT(*) AS cnt FROM complaints c LEFT JOIN USERS u ON c.user_id = u.id " . $where_sql);
     $total_filtered = 0;
     if ($cnt_stmt) {
         if (!empty($bind_params)) {
@@ -221,8 +223,8 @@ if ($conn && !$conn->connect_error) {
     if ($page > $total_pages) $page = $total_pages;
     $offset = ($page - 1) * $per_page;
 
-    // Complaints list
-    $stmt = $conn->prepare("SELECT * FROM complaints " . $where_sql . " ORDER BY id DESC LIMIT ? OFFSET ?");
+    // Complaints list joined with user role
+    $stmt = $conn->prepare("SELECT c.*, u.role AS complainant_role, u.name AS complainant_name FROM complaints c LEFT JOIN USERS u ON c.user_id = u.id " . $where_sql . " ORDER BY c.id DESC LIMIT ? OFFSET ?");
     if ($stmt) {
         $limit_types = $bind_types . 'ii';
         $limit_params = array_merge($bind_params, [$per_page, $offset]);
@@ -474,9 +476,17 @@ if ($conn && !$conn->connect_error) {
                                             <?php if ($view_scope === 'all'): ?>
                                                 <td>
                                                     <?php if ((int)$c["user_id"] === (int)$user_id): ?>
-                                                        <span class="badge badge-role-student">You</span>
+                                                        <?php if (($user_role ?? '') === 'teacher'): ?>
+                                                            <span class="badge badge-role-teacher">You (Teacher)</span>
+                                                        <?php else: ?>
+                                                            <span class="badge badge-role-student">You</span>
+                                                        <?php endif; ?>
                                                     <?php else: ?>
-                                                        <small style="color: var(--text-muted);">PUCIT Student</small>
+                                                        <?php if (($c['complainant_role'] ?? 'student') === 'teacher'): ?>
+                                                            <span class="badge badge-role-teacher">Teacher / Faculty</span>
+                                                        <?php else: ?>
+                                                            <small style="color: var(--text-muted);">PUCIT Student</small>
+                                                        <?php endif; ?>
                                                     <?php endif; ?>
                                                 </td>
                                             <?php endif; ?>
@@ -630,8 +640,19 @@ if ($conn && !$conn->connect_error) {
                 <div class="detail-value">
                     <?php if ((int)$c["user_id"] === (int)$user_id): ?>
                         <strong>Filed by You (<?= htmlspecialchars($user_name) ?>)</strong>
+                        <?php if (($user_role ?? '') === 'teacher'): ?>
+                            <span class="badge badge-role-teacher" style="margin-left: 6px;">Teacher / Faculty</span>
+                        <?php else: ?>
+                            <span class="badge badge-role-student" style="margin-left: 6px;">Student</span>
+                        <?php endif; ?>
                     <?php else: ?>
-                        <span style="color: var(--text-muted);">PUCIT Student (Identity Anonymous / Protected)</span>
+                        <?php if (($c['complainant_role'] ?? 'student') === 'teacher'): ?>
+                            <span class="badge badge-role-teacher">PUCIT Faculty / Teacher</span>
+                            <span style="color: var(--text-muted); font-size: 12px; margin-left: 6px;">(Identity Protected)</span>
+                        <?php else: ?>
+                            <span class="badge badge-role-student">PUCIT Student</span>
+                            <span style="color: var(--text-muted); font-size: 12px; margin-left: 6px;">(Identity Protected)</span>
+                        <?php endif; ?>
                     <?php endif; ?>
                 </div>
             </div>

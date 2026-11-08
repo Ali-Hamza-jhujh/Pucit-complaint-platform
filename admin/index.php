@@ -20,11 +20,24 @@ $admin_name = $_SESSION['user_name'] ?? 'Admin';
 $action_msg   = '';
 $action_error = '';
 
+// Flash message handler for Post/Redirect/Get
+if (!empty($_SESSION['flash_action_msg'])) {
+    $action_msg = $_SESSION['flash_action_msg'];
+    unset($_SESSION['flash_action_msg']);
+}
+if (!empty($_SESSION['flash_action_error'])) {
+    $action_error = $_SESSION['flash_action_error'];
+    unset($_SESSION['flash_action_error']);
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $conn && !$conn->connect_error) {
+    $redirect_url = 'index.php' . (!empty($_SERVER['QUERY_STRING']) ? '?' . $_SERVER['QUERY_STRING'] : '');
 
     // Verify CSRF token
     if (!verify_csrf($_POST['csrf_token'] ?? '')) {
-        $action_error = 'Security token expired or invalid. Please refresh and try again.';
+        $_SESSION['flash_action_error'] = 'Security token expired or invalid. Please refresh and try again.';
+        header("Location: {$redirect_url}");
+        exit();
     } elseif (isset($_POST['update_status'])) {
         $complaint_id = intval($_POST['complaint_id'] ?? 0);
         $new_status   = trim($_POST['new_status'] ?? '');
@@ -76,14 +89,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $conn && !$conn->connect_error) {
                     $notif_stmt->close();
                 }
 
-                $action_msg = "Complaint #{$complaint_id} updated to '{$new_status}' successfully.";
+                $_SESSION['flash_action_msg'] = "Complaint #{$complaint_id} updated to '{$new_status}' successfully.";
             } else {
-                $action_error = "Failed to update complaint: " . htmlspecialchars($conn->error);
+                $_SESSION['flash_action_error'] = "Failed to update complaint: " . htmlspecialchars($conn->error);
             }
             $upd->close();
         } else {
-            $action_error = "Invalid complaint ID or status.";
+            $_SESSION['flash_action_error'] = "Invalid complaint ID or status.";
         }
+        header("Location: {$redirect_url}");
+        exit();
     }
 }
 
@@ -155,7 +170,7 @@ $total_pages = max(1, (int)ceil($total_rows / $per_page));
 if ($page > $total_pages) $page = $total_pages;
 $offset = ($page - 1) * $per_page;
 
-$sql = "SELECT c.*, u.name AS student_name, u.email AS student_email
+$sql = "SELECT c.*, u.name AS student_name, u.email AS student_email, u.role AS user_role
         FROM complaints c
         LEFT JOIN USERS u ON c.user_id = u.id
         {$where_sql}
@@ -378,9 +393,20 @@ if ($conn && !$conn->connect_error) {
                                         </td>
                                         <td><?= $c['is_anonymous'] ? '🔒 Yes' : 'No' ?></td>
                                         <td>
-                                            <small style="color: var(--text-secondary);">
-                                                <?= htmlspecialchars($c['student_name'] ?? 'Unknown') ?>
-                                            </small>
+                                            <div style="display: flex; flex-direction: column; gap: 4px;">
+                                                <span style="font-weight: 600; font-size: 13px; color: var(--text-primary);">
+                                                    <?= htmlspecialchars($c['student_name'] ?? 'Unknown') ?>
+                                                </span>
+                                                <div>
+                                                    <?php if (($c['user_role'] ?? 'student') === 'teacher'): ?>
+                                                        <span class="badge badge-role-teacher">Teacher</span>
+                                                    <?php elseif (($c['user_role'] ?? '') === 'admin'): ?>
+                                                        <span class="badge badge-role-admin">Admin</span>
+                                                    <?php else: ?>
+                                                        <span class="badge badge-role-student">Student</span>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </div>
                                         </td>
                                         <td>
                                             <div style="font-size: 12px; line-height: 1.4;">
@@ -510,21 +536,33 @@ if ($conn && !$conn->connect_error) {
 
             <!-- Identity Reveal (Admin Only) -->
             <div class="identity-reveal">
-                <h4>🔓 Student Identity (Admin Eyes Only)</h4>
+                <h4>🔓 Complainant Identity (Admin Eyes Only)</h4>
                 <div class="detail-row">
                     <div class="detail-label">Full Name</div>
                     <div class="detail-value"><strong><?= htmlspecialchars($c['student_name'] ?? 'Unknown') ?></strong></div>
                 </div>
                 <div class="detail-row">
-                    <div class="detail-label">Email Address</div>
+                    <div class="detail-label">Official Email</div>
                     <div class="detail-value"><?= htmlspecialchars($c['student_email'] ?? 'N/A') ?></div>
+                </div>
+                <div class="detail-row">
+                    <div class="detail-label">Account Role</div>
+                    <div class="detail-value">
+                        <?php if (($c['user_role'] ?? 'student') === 'teacher'): ?>
+                            <span class="badge badge-role-teacher">Teacher / Faculty</span>
+                        <?php elseif (($c['user_role'] ?? '') === 'admin'): ?>
+                            <span class="badge badge-role-admin">Administrator</span>
+                        <?php else: ?>
+                            <span class="badge badge-role-student">Student</span>
+                        <?php endif; ?>
+                    </div>
                 </div>
                 <div class="detail-row">
                     <div class="detail-label">User ID</div>
                     <div class="detail-value">#<?= $c['user_id'] ?></div>
                 </div>
                 <?php if ($c['is_anonymous']): ?>
-                    <small style="color: #b45309;">⚠ This complaint was filed anonymously. The student's identity is hidden from public view.</small>
+                    <small style="color: #b45309;">⚠ This complaint was submitted anonymously. Complainant identity is hidden from the public feed.</small>
                 <?php endif; ?>
             </div>
 
@@ -610,7 +648,9 @@ if ($conn && !$conn->connect_error) {
                                     </div>
                                 </div>
                                 <div class="timeline-handler">
-                                    <span class="timeline-handler-icon">📝 Student</span>
+                                    <span class="timeline-handler-icon">
+                                        <?= (($c['user_role'] ?? 'student') === 'teacher') ? '👨‍🏫 Teacher' : '📝 Student' ?>
+                                    </span>
                                     <span class="timeline-handler-name">Ticket Lodged</span>
                                 </div>
                             </div>
@@ -620,7 +660,7 @@ if ($conn && !$conn->connect_error) {
             </details>
 
             <!-- Status Update Form -->
-            <form method="POST" action="index.php" class="action-form">
+            <form method="POST" action="index.php<?= !empty($_SERVER['QUERY_STRING']) ? '?' . htmlspecialchars($_SERVER['QUERY_STRING']) : '' ?>" class="action-form">
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
                 <input type="hidden" name="complaint_id" value="<?= $c['id'] ?>">
                 <div class="detail-label" style="margin-bottom: 8px;">Update Status</div>
