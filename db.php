@@ -69,6 +69,8 @@ if ($conn && !$conn->connect_error) {
     $add_col('USERS', 'is_active', "TINYINT(1) NOT NULL DEFAULT 1");
     $add_col('USERS', 'verification_code', "VARCHAR(10) NULL");
     $add_col('USERS', 'is_verified', "TINYINT(1) NOT NULL DEFAULT 1");
+    $add_col('USERS', 'password_reset_requested', "TINYINT(1) NOT NULL DEFAULT 0");
+    $add_col('USERS', 'reset_requested_at', "TIMESTAMP NULL DEFAULT NULL");
     @$conn->query("UPDATE USERS SET role = 'student' WHERE role IS NULL");
     @$conn->query("ALTER TABLE USERS MODIFY COLUMN role ENUM('student','teacher','admin') NOT NULL DEFAULT 'student'");
     @$conn->query("ALTER TABLE USERS MODIFY COLUMN password VARCHAR(255) NOT NULL");

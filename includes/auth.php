@@ -37,6 +37,16 @@ if (!function_exists('is_admin')) {
 }
 
 // ------------------------------------------------------------------
+// is_teacher()
+// Returns true only when the logged-in user holds the 'teacher' role.
+// ------------------------------------------------------------------
+if (!function_exists('is_teacher')) {
+    function is_teacher(): bool {
+        return is_logged_in() && ($_SESSION['user_role'] ?? '') === 'teacher';
+    }
+}
+
+// ------------------------------------------------------------------
 // require_login()
 // Redirect to login page if no authenticated session is present.
 // Works from any directory depth because it uses BASE_PATH constant.

@@ -64,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $conn && !$conn->connect_error) {
             }
 
             $hashed = password_hash($temp_pass, PASSWORD_DEFAULT);
-            $stmt = $conn->prepare("UPDATE USERS SET password = ? WHERE id = ?");
+            $stmt = $conn->prepare("UPDATE USERS SET password = ?, password_reset_requested = 0, reset_requested_at = NULL WHERE id = ?");
             if ($stmt) {
                 $stmt->bind_param('si', $hashed, $target_id);
                 if ($stmt->execute()) {
@@ -121,13 +121,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $conn && !$conn->connect_error) {
 }
 
 // Stats
-$user_stats = ['total' => 0, 'students' => 0, 'teachers' => 0, 'admins' => 0];
+$user_stats = ['total' => 0, 'students' => 0, 'teachers' => 0, 'admins' => 0, 'resets_pending' => 0];
 if ($conn && !$conn->connect_error) {
     $s_res = $conn->query("SELECT 
         COUNT(*) AS total,
         SUM(CASE WHEN COALESCE(role, 'student') = 'student' THEN 1 ELSE 0 END) AS students,
         SUM(CASE WHEN role = 'teacher' THEN 1 ELSE 0 END) AS teachers,
-        SUM(CASE WHEN role = 'admin' THEN 1 ELSE 0 END) AS admins
+        SUM(CASE WHEN role = 'admin' THEN 1 ELSE 0 END) AS admins,
+        SUM(CASE WHEN password_reset_requested = 1 THEN 1 ELSE 0 END) AS resets_pending
         FROM USERS");
     if ($s_res && $row = $s_res->fetch_assoc()) {
         $user_stats = array_merge($user_stats, array_map('intval', $row));
@@ -148,6 +149,8 @@ if ($role_filter === 'student') {
     $where[] = "role = 'teacher'";
 } elseif ($role_filter === 'admin') {
     $where[] = "role = 'admin'";
+} elseif ($role_filter === 'reset_requested') {
+    $where[] = "password_reset_requested = 1";
 }
 
 if ($search !== '') {
@@ -162,7 +165,7 @@ $where_clause = count($where) > 0 ? "WHERE " . implode(" AND ", $where) : "";
 
 $users = [];
 if ($conn && !$conn->connect_error) {
-    $sql = "SELECT id, name, email, role, is_active, created_at FROM USERS {$where_clause} ORDER BY id DESC LIMIT 100";
+    $sql = "SELECT id, name, email, role, is_active, password_reset_requested, reset_requested_at, created_at FROM USERS {$where_clause} ORDER BY password_reset_requested DESC, id DESC LIMIT 100";
     $stmt = $conn->prepare($sql);
     if ($stmt) {
         if (!empty($bind_params)) {
@@ -278,6 +281,7 @@ if ($conn && !$conn->connect_error) {
                 <option value="student" <?= $role_filter === 'student' ? 'selected' : '' ?>>Students</option>
                 <option value="teacher" <?= $role_filter === 'teacher' ? 'selected' : '' ?>>Teachers</option>
                 <option value="admin"   <?= $role_filter === 'admin'   ? 'selected' : '' ?>>Admins</option>
+                <option value="reset_requested" <?= $role_filter === 'reset_requested' ? 'selected' : '' ?>>⚡ Password Requested <?= $user_stats['resets_pending'] > 0 ? "({$user_stats['resets_pending']})" : "" ?></option>
             </select>
             <input type="text" name="q" placeholder="Search by name or email..." value="<?= htmlspecialchars($search) ?>">
             <button type="submit" class="btn btn-primary btn-sm">Filter</button>
@@ -314,9 +318,16 @@ if ($conn && !$conn->connect_error) {
                             </thead>
                             <tbody>
                                 <?php foreach ($users as $u): ?>
-                                    <tr>
+                                    <tr style="<?= !empty($u['password_reset_requested']) ? 'background: #fffbeb;' : '' ?>">
                                         <td><strong>#<?= $u['id'] ?></strong></td>
-                                        <td><?= htmlspecialchars($u['name']) ?></td>
+                                        <td>
+                                            <?= htmlspecialchars($u['name']) ?>
+                                            <?php if (!empty($u['password_reset_requested'])): ?>
+                                                <div style="margin-top: 3px;">
+                                                    <span class="badge" style="background:#fee2e2; color:#b91c1c; font-size:10px; font-weight:700; border:1px solid #fca5a5;">⚡ Reset Requested</span>
+                                                </div>
+                                            <?php endif; ?>
+                                        </td>
                                         <td><?= htmlspecialchars($u['email']) ?></td>
                                         <td>
                                             <?php if ($u['role'] === 'admin'): ?>
@@ -355,9 +366,15 @@ if ($conn && !$conn->connect_error) {
                                                             <?= $u['is_active'] ? 'Suspend' : 'Activate' ?>
                                                         </button>
                                                     </form>
-                                                    <button type="button" class="btn btn-outline btn-sm" onclick="openResetModal(<?= $u['id'] ?>, '<?= htmlspecialchars(addslashes($u['name']), ENT_QUOTES) ?>', '<?= htmlspecialchars(addslashes($u['email']), ENT_QUOTES) ?>')">
-                                                        Reset Password
-                                                    </button>
+                                                    <?php if (!empty($u['password_reset_requested'])): ?>
+                                                        <button type="button" class="btn btn-sm" style="background: #dc2626; color: #fff; font-weight: 700; border: 1px solid #b91c1c; box-shadow: 0 0 6px rgba(220,38,38,0.35); white-space: nowrap;" onclick="openResetModal(<?= $u['id'] ?>, '<?= htmlspecialchars(addslashes($u['name']), ENT_QUOTES) ?>', '<?= htmlspecialchars(addslashes($u['email']), ENT_QUOTES) ?>')">
+                                                            ⚡ Reset Password
+                                                        </button>
+                                                    <?php else: ?>
+                                                        <button type="button" class="btn btn-outline btn-sm" style="white-space: nowrap;" onclick="openResetModal(<?= $u['id'] ?>, '<?= htmlspecialchars(addslashes($u['name']), ENT_QUOTES) ?>', '<?= htmlspecialchars(addslashes($u['email']), ENT_QUOTES) ?>')">
+                                                            Reset Password
+                                                        </button>
+                                                    <?php endif; ?>
                                                 </div>
                                             <?php else: ?>
                                                 <small style="color: var(--text-muted);">Current User</small>

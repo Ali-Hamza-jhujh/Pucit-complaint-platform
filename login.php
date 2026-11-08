@@ -37,6 +37,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         } else {
             increment_rate_limit($ip, 'reset_attempt');
 
+            // Mark reset requested flag in database
+            $flag_stmt = $conn->prepare("UPDATE USERS SET password_reset_requested = 1, reset_requested_at = NOW() WHERE email = ?");
+            if ($flag_stmt) {
+                $flag_stmt->bind_param('s', $reset_email);
+                $flag_stmt->execute();
+                $flag_stmt->close();
+            }
+
             // Dispatch notification to support email
             $to = SUPPORT_EMAIL;
             $subject = "PUCIT Portal - Password Reset Request";
