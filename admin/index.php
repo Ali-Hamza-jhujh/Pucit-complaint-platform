@@ -233,6 +233,7 @@ if ($conn && !$conn->connect_error) {
                     <a href="index.php" class="active">Complaints</a>
                     <a href="categories.php">Categories</a>
                     <a href="users.php">Users</a>
+                    <a href="logs.php">Audit Logs</a>
                 </div>
                 <div class="user-profile-badge">
                     <div class="user-avatar"><?= strtoupper(substr($admin_name, 0, 1)) ?></div>
