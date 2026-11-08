@@ -99,7 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $conn && !$conn->connect_error) {
                         send_system_email($target_email, $reset_sub, $reset_msg);
                     }
 
-                    $_SESSION['flash_users_msg'] = "Password reset successfully for {$target_name}. An official email with the temporary password has been dispatched to <strong>" . htmlspecialchars($target_email) . "</strong>. (Assigned: <code>" . htmlspecialchars($temp_pass) . "</code>)";
+                    $_SESSION['flash_users_msg'] = "Password reset successfully for {$target_name}. An official email with the temporary password has been dispatched to: {$target_email} (Assigned: {$temp_pass})";
                 } else {
                     $_SESSION['flash_users_error'] = "Failed to reset password: " . htmlspecialchars($conn->error);
                 }
@@ -271,7 +271,7 @@ if ($conn && !$conn->connect_error) {
         </div>
 
         <?php if (!empty($msg)): ?>
-            <div class="alert alert-success"><span><?= $msg ?></span></div>
+            <div class="alert alert-success"><span><?= htmlspecialchars($msg) ?></span></div>
         <?php endif; ?>
         <?php if (!empty($error)): ?>
             <div class="alert alert-danger"><span><?= htmlspecialchars($error) ?></span></div>

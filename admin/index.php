@@ -96,7 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $conn && !$conn->connect_error) {
                 }
 
                 if (!empty($email_dispatched_to)) {
-                    $_SESSION['flash_action_msg'] = "Complaint #{$complaint_id} updated to '{$new_status}' successfully. Notification email dispatched to <strong>" . htmlspecialchars($email_dispatched_to) . "</strong>.";
+                    $_SESSION['flash_action_msg'] = "Complaint #{$complaint_id} updated to '{$new_status}' successfully. Notification email dispatched to: {$email_dispatched_to}";
                 } else {
                     $_SESSION['flash_action_msg'] = "Complaint #{$complaint_id} updated to '{$new_status}' successfully.";
                 }
