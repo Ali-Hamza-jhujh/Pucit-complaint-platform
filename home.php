@@ -22,7 +22,32 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["submit_complaint"])) 
     if (empty($title) || empty($category) || empty($description)) {
         $complaint_error = "Please fill in all complaint details.";
     } elseif ($conn && !$conn->connect_error) {
-        $ins = $conn->prepare("INSERT INTO complaints (user_id, user_name, title, category, description, priority, status) VALUES (?, ?, ?, ?, ?, ?, 'Pending')");
+            // Handle optional image upload
+            $image_path = null;
+            if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+                $tmp_name = $_FILES['image']['tmp_name'];
+                $orig_name = basename($_FILES['image']['name']);
+                $file_size = $_FILES['image']['size'];
+                $mime_type = mime_content_type($tmp_name);
+                $ext = strtolower(pathinfo($orig_name, PATHINFO_EXTENSION));
+
+                if (!in_array($mime_type, ALLOWED_MIME_TYPES) || !in_array($ext, ALLOWED_EXTENSIONS)) {
+                    $complaint_error = "Invalid image type. Allowed: jpg, jpeg, png, webp.";
+                } elseif ($file_size > UPLOAD_MAX_SIZE) {
+                    $complaint_error = "Image exceeds maximum size of " . (UPLOAD_MAX_SIZE/1024/1024) . " MB.";
+                } else {
+                    $new_name = bin2hex(random_bytes(16)) . "." . $ext;
+                    $dest = UPLOAD_DIR . $new_name;
+                    if (move_uploaded_file($tmp_name, $dest)) {
+                        $image_path = UPLOAD_WEB_PATH . $new_name;
+                    } else {
+                        $complaint_error = "Failed to store uploaded image.";
+                    }
+                }
+            }
+
+            // Prepare insert with optional image_path
+            $ins = $conn->prepare("INSERT INTO complaints (user_id, user_name, title, category, description, priority, status, image_path) VALUES (?, ?, ?, ?, ?, ?, 'Pending', ?)");
         if ($ins) {
             $ins->bind_param("isssss", $user_id, $user_name, $title, $category, $description, $priority);
             if ($ins->execute()) {
