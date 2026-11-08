@@ -686,6 +686,33 @@ line-height: 1.4;
   color: #075985;
 }
 
+.badge-active {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.badge-inactive {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.badge-role-admin {
+  background-color: #ede9fe;
+  color: #6b21a8;
+  font-weight: 700;
+}
+
+.badge-role-teacher {
+  background-color: #fef3c7;
+  color: #92400e;
+  font-weight: 700;
+}
+
+.badge-role-student {
+  background-color: #e0f2fe;
+  color: #0369a1;
+}
+
 .form-select, textarea.form-control {
   width: 100%;
   padding: 10px 14px;

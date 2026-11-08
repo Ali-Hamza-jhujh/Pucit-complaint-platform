@@ -195,13 +195,6 @@ if ($conn && !$conn->connect_error) {
     <title>Manage Users — PUCIT Admin</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%230e2a47'><path d='M12 3L1 9L12 15L21 10.09V17H23V9M5 13.18V17.18C5 19.94 8.13 22 12 22C15.87 22 19 19.94 19 17.18V13.18L12 17L5 13.18Z'/></svg>">
     <link rel="stylesheet" href="../style.css?v=<?= filemtime(__DIR__ . '/../style.css') ?>">
-    <style>
-        .badge-active { background: #d1fae5; color: #065f46; }
-        .badge-inactive { background: #fee2e2; color: #991b1b; }
-        .badge-role-admin { background: #ede9fe; color: #6b21a8; font-weight: 700; }
-        .badge-role-teacher { background: #fef3c7; color: #92400e; font-weight: 700; }
-        .badge-role-student { background: #e0f2fe; color: #0369a1; }
-    </style>
 </head>
 <body>
 
