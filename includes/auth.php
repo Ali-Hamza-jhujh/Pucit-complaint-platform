@@ -71,20 +71,77 @@ if (!function_exists('require_admin')) {
 }
 
 // ------------------------------------------------------------------
-// get_session_user()
-// Returns a safe array of the current user's session data.
+// verify_csrf()
+// Checks the CSRF token stored in session against the provided token.
 // ------------------------------------------------------------------
 if (!function_exists('verify_csrf')) {
     function verify_csrf(string $token): bool {
         return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
     }
 }
+
+// ------------------------------------------------------------------
+// get_session_user()
+// Returns a safe array of the current user's session data.
+// ------------------------------------------------------------------
+if (!function_exists('get_session_user')) {
     function get_session_user(): array {
         return [
-            'id'    => (int)($_SESSION['user_id']    ?? 0),
-            'name'  => $_SESSION['user_name']         ?? 'Unknown',
-            'email' => $_SESSION['user_email']        ?? '',
-            'role'  => $_SESSION['user_role']         ?? 'student',
+            'id'    => (int)($_SESSION['user_id'] ?? 0),
+            'name'  => $_SESSION['user_name'] ?? 'Unknown',
+            'email' => $_SESSION['user_email'] ?? '',
+            'role'  => $_SESSION['user_role'] ?? 'student',
         ];
+    }
+}
+
+/* Rate limiting utilities - Phase 6 */
+if (!function_exists('check_rate_limit')) {
+    /**
+     * Checks whether the given identifier/action has exceeded the limit within the time window.
+     *
+     * @param string $identifier Unique identifier (e.g., IP address or user ID)
+     * @param string $action Specific action name (e.g., 'login_attempt')
+     * @param int $limit Maximum allowed attempts
+     * @param int $window_seconds Time window in seconds
+     * @return bool True if under limit, false if limit exceeded
+     */
+    function check_rate_limit(string $identifier, string $action, int $limit, int $window_seconds): bool {
+        global $conn; // Assuming $conn is the mysqli connection from db.php
+        $now = time();
+        $window_start = $now - $window_seconds;
+
+        // Clean up old records
+        $stmt = $conn->prepare('DELETE FROM rate_limits WHERE timestamp < ?');
+        $stmt->bind_param('i', $window_start);
+        $stmt->execute();
+        $stmt->close();
+
+        // Count recent attempts
+        $stmt = $conn->prepare('SELECT COUNT(*) FROM rate_limits WHERE identifier = ? AND action = ? AND timestamp >= ?');
+        $stmt->bind_param('ssi', $identifier, $action, $window_start);
+        $stmt->execute();
+        $stmt->bind_result($cnt);
+        $stmt->fetch();
+        $stmt->close();
+
+        return $cnt < $limit;
+    }
+}
+
+if (!function_exists('increment_rate_limit')) {
+    /**
+     * Records a new attempt for the given identifier/action.
+     *
+     * @param string $identifier Unique identifier (e.g., IP address or user ID)
+     * @param string $action Specific action name
+     */
+    function increment_rate_limit(string $identifier, string $action): void {
+        global $conn;
+        $now = time();
+        $stmt = $conn->prepare('INSERT INTO rate_limits (identifier, action, timestamp) VALUES (?, ?, ?)');
+        $stmt->bind_param('ssi', $identifier, $action, $now);
+        $stmt->execute();
+        $stmt->close();
     }
 }
