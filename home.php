@@ -14,12 +14,15 @@ $complaint_error = "";
 
 // Handle new complaint submission
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["submit_complaint"])) {
+    $csrf = $_POST["csrf_token"] ?? "";
     $title = trim($_POST["title"] ?? "");
     $category = trim($_POST["category"] ?? "");
     $priority = trim($_POST["priority"] ?? "Medium");
     $description = trim($_POST["description"] ?? "");
 
-    if (empty($title) || empty($category) || empty($description)) {
+    if (!verify_csrf($csrf)) {
+        $complaint_error = "Security validation failed. Please refresh the page and try again.";
+    } elseif (empty($title) || empty($category) || empty($description)) {
         $complaint_error = "Please fill in all complaint details.";
     } elseif ($conn && !$conn->connect_error) {
             // Handle optional image upload

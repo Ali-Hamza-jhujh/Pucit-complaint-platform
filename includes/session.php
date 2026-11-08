@@ -40,6 +40,11 @@ if (session_status() === PHP_SESSION_NONE) {
         $_SESSION['_created_at']  = time();
     }
 
+    // Ensure CSRF token is always available for active session
+    if (empty($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+
     // Enforce session lifetime: expire server-side even if cookie persists
     if ($sess_lifetime > 0 && isset($_SESSION['_created_at'])) {
         if ((time() - $_SESSION['_created_at']) > $sess_lifetime) {
