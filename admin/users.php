@@ -40,6 +40,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $conn && !$conn->connect_error) {
             }
         }
     }
+    // Reset user password
+    elseif (isset($_POST['reset_user_password'])) {
+        $target_id  = intval($_POST['user_id'] ?? 0);
+        $temp_pass  = trim($_POST['temp_password'] ?? '');
+
+        if ($target_id <= 0 || strlen($temp_pass) < 6) {
+            $error = "Temporary password must be at least 6 characters long.";
+        } else {
+            $hashed = password_hash($temp_pass, PASSWORD_DEFAULT);
+            $stmt = $conn->prepare("UPDATE USERS SET password = ? WHERE id = ?");
+            if ($stmt) {
+                $stmt->bind_param('si', $hashed, $target_id);
+                if ($stmt->execute()) {
+                    $msg = "Password reset successfully for User #{$target_id}. New temporary password set.";
+                } else {
+                    $error = "Failed to reset password: " . htmlspecialchars($conn->error);
+                }
+                $stmt->close();
+            }
+        }
+    }
 }
 
 // Stats
@@ -245,13 +266,18 @@ if ($conn && !$conn->connect_error) {
                                         <td><small style="color: var(--text-muted);"><?= date('M d, Y', strtotime($u['created_at'])) ?></small></td>
                                         <td>
                                             <?php if ($u['id'] !== $admin_id): ?>
-                                                <form method="POST" action="users.php" style="margin: 0;">
-                                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
-                                                    <input type="hidden" name="user_id" value="<?= $u['id'] ?>">
-                                                    <button type="submit" name="toggle_status" class="btn btn-outline btn-sm">
-                                                        <?= $u['is_active'] ? 'Suspend' : 'Activate' ?>
+                                                <div style="display: flex; gap: 6px; align-items: center;">
+                                                    <form method="POST" action="users.php" style="margin: 0;">
+                                                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                                                        <input type="hidden" name="user_id" value="<?= $u['id'] ?>">
+                                                        <button type="submit" name="toggle_status" class="btn btn-outline btn-sm">
+                                                            <?= $u['is_active'] ? 'Suspend' : 'Activate' ?>
+                                                        </button>
+                                                    </form>
+                                                    <button type="button" class="btn btn-outline btn-sm" onclick="openResetModal(<?= $u['id'] ?>, '<?= htmlspecialchars(addslashes($u['name']), ENT_QUOTES) ?>', '<?= htmlspecialchars(addslashes($u['email']), ENT_QUOTES) ?>')">
+                                                        Reset Password
                                                     </button>
-                                                </form>
+                                                </div>
                                             <?php else: ?>
                                                 <small style="color: var(--text-muted);">Current User</small>
                                             <?php endif; ?>
@@ -269,6 +295,70 @@ if ($conn && !$conn->connect_error) {
             &copy; <?= date("Y") ?> PUCIT — Admin Portal
         </div>
     </div>
+
+    <!-- Admin Password Reset Modal -->
+    <div class="detail-modal" id="reset-modal">
+        <div class="detail-card" style="max-width: 480px;">
+            <button class="btn-close-modal" onclick="closeResetModal()">&times;</button>
+            <h3>🔑 Reset User Password</h3>
+            <p style="font-size: 13.5px; color: var(--text-secondary); margin-bottom: 16px;">
+                Set a new temporary password for <strong id="reset_user_info"></strong>.
+            </p>
+
+            <form method="POST" action="users.php">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                <input type="hidden" name="user_id" id="reset_user_id">
+
+                <div class="form-group">
+                    <label class="form-label" for="temp_password">New Temporary Password</label>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" name="temp_password" id="temp_password" class="form-control" style="padding-left: 14px;" placeholder="Minimum 6 characters" required>
+                        <button type="button" class="btn btn-outline btn-sm" onclick="generateTempPass()" style="white-space: nowrap;">
+                            Generate
+                        </button>
+                    </div>
+                    <small style="color: var(--text-muted); font-size: 12px; display: block; margin-top: 4px;">
+                        Provide this password to the student. They can log in and update it on their Profile.
+                    </small>
+                </div>
+
+                <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+                    <button type="button" class="btn btn-outline btn-sm" onclick="closeResetModal()">Cancel</button>
+                    <button type="submit" name="reset_user_password" class="btn btn-primary btn-sm">Save New Password</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+<script>
+function openResetModal(userId, userName, userEmail) {
+    document.getElementById('reset_user_id').value = userId;
+    document.getElementById('reset_user_info').textContent = userName + ' (' + userEmail + ')';
+    document.getElementById('temp_password').value = '';
+    document.getElementById('reset-modal').classList.add('open');
+}
+
+function closeResetModal() {
+    document.getElementById('reset-modal').classList.remove('open');
+}
+
+function generateTempPass() {
+    var chars = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789!@#$';
+    var pass = '';
+    for (var i = 0; i < 10; i++) {
+        pass += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    document.getElementById('temp_password').value = pass;
+}
+
+document.getElementById('reset-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeResetModal();
+});
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeResetModal();
+});
+</script>
 
 </body>
 </html>

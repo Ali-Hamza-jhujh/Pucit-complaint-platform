@@ -18,18 +18,49 @@ if (isset($_GET["registered"])) {
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
-    $email = trim($_POST["email"] ?? "");
-    $password = $_POST["password"] ?? "";
 
-    if (!check_rate_limit($ip, 'login_attempt', 5, 300)) {
-        $error = "Too many failed login attempts. Please wait 5 minutes before trying again.";
-    } elseif (empty($email) || empty($password)) {
-        $error = "Please enter both email and password.";
-    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $error = "Please enter a valid email address.";
-    } elseif (!$conn || $conn->connect_error) {
-        $error = "Database connection error. Please ensure MySQL is active (sudo service mysql start).";
+    // Handle password reset request form
+    if (isset($_POST["request_password_reset"])) {
+        $csrf = $_POST["csrf_token"] ?? "";
+        $reset_email = trim($_POST["reset_email"] ?? "");
+
+        if (!verify_csrf($csrf)) {
+            $error = "Security token expired. Please refresh and try again.";
+        } elseif (!check_rate_limit($ip, 'reset_attempt', 3, 3600)) {
+            $error = "Too many password reset requests. Please wait before trying again.";
+        } elseif (empty($reset_email) || !filter_var($reset_email, FILTER_VALIDATE_EMAIL)) {
+            $error = "Please enter a valid university email address.";
+        } else {
+            increment_rate_limit($ip, 'reset_attempt');
+
+            // Dispatch notification to support email
+            $to = SUPPORT_EMAIL;
+            $subject = "PUCIT Portal - Password Reset Request";
+            $body = "A password reset request was lodged on the PUCIT Complaint Portal.\n\n"
+                  . "Target Student Email: {$reset_email}\n"
+                  . "Client IP: {$ip}\n"
+                  . "Timestamp: " . date("Y-m-d H:i:s") . "\n\n"
+                  . "Please verify student credentials and assist with account recovery.";
+            $headers = "From: noreply@pucit.edu.pk\r\n"
+                     . "Reply-To: {$reset_email}\r\n"
+                     . "X-Mailer: PHP/" . phpversion();
+            @mail($to, $subject, $body, $headers);
+
+            $success = "Password reset request submitted. University IT Support at " . htmlspecialchars(SUPPORT_EMAIL) . " has been notified.";
+        }
     } else {
+        $email = trim($_POST["email"] ?? "");
+        $password = $_POST["password"] ?? "";
+
+        if (!check_rate_limit($ip, 'login_attempt', 5, 300)) {
+            $error = "Too many failed login attempts. Please wait 5 minutes before trying again.";
+        } elseif (empty($email) || empty($password)) {
+            $error = "Please enter both email and password.";
+        } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $error = "Please enter a valid email address.";
+        } elseif (!$conn || $conn->connect_error) {
+            $error = "Database connection error. Please ensure MySQL is active (sudo service mysql start).";
+        } else {
         // Prepare secure statement to look up user
         $stmt = $conn->prepare("SELECT id, name, email, password, role, is_active FROM USERS WHERE email = ? LIMIT 1");
         
@@ -89,6 +120,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $error = "Query preparation error: " . htmlspecialchars($conn->error);
         }
     }
+}
 }
 ?>
 <!DOCTYPE html>
@@ -224,19 +256,28 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             To safeguard student privacy and academic integrity, automated password resets are handled through the official university IT Helpdesk.
         </p>
 
-        <div style="background: var(--surface-muted); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 14px 16px; margin-bottom: 16px;">
-            <div style="font-size: 13px; font-weight: 600; color: var(--primary); margin-bottom: 6px;">How to reset:</div>
-            <ul style="font-size: 13px; color: var(--text-secondary); padding-left: 20px; line-height: 1.6;">
-                <li>Email support directly at <strong><?= htmlspecialchars(SUPPORT_EMAIL) ?></strong>.</li>
-                <li>Provide your <strong>Student Roll Number</strong> (e.g., <code>bsef22m001</code>).</li>
-                <li>Attach a photo of your valid <strong>PUCIT Student Card</strong>.</li>
-            </ul>
+        <form method="POST" action="login.php" style="margin-bottom: 16px;">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+            <div class="form-group" style="margin-bottom: 12px;">
+                <label class="form-label" for="reset_email">Enter Registered University Email</label>
+                <input type="email" name="reset_email" id="reset_email" class="form-control" style="padding-left: 14px;" placeholder="e.g. bsef22m001@pucit.edu.pk" required>
+            </div>
+            <button type="submit" name="request_password_reset" class="btn btn-primary btn-block btn-sm">
+                <span>Send Reset Request to Support</span>
+            </button>
+        </form>
+
+        <div style="background: var(--surface-muted); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 12px 14px; margin-bottom: 16px;">
+            <div style="font-size: 12.5px; font-weight: 600; color: var(--primary); margin-bottom: 4px;">Manual Support:</div>
+            <div style="font-size: 12.5px; color: var(--text-secondary); line-height: 1.5;">
+                You can also email directly to <strong><?= htmlspecialchars(SUPPORT_EMAIL) ?></strong> with your roll number and student card photo.
+            </div>
         </div>
 
         <div style="display: flex; gap: 10px; justify-content: flex-end;">
             <button type="button" class="btn btn-outline btn-sm" onclick="closeForgotModal()">Close</button>
-            <a href="mailto:<?= htmlspecialchars(SUPPORT_EMAIL) ?>?subject=Password%20Reset%20Request%20-%20PUCIT%20Complaint%20Portal" class="btn btn-primary btn-sm">
-                Email IT Support
+            <a href="mailto:<?= htmlspecialchars(SUPPORT_EMAIL) ?>?subject=Password%20Reset%20Request%20-%20PUCIT%20Complaint%20Portal" class="btn btn-outline btn-sm">
+                Direct Email
             </a>
         </div>
     </div>
