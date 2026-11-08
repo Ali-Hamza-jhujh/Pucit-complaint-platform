@@ -191,7 +191,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     <input type="checkbox" name="remember" checked>
                     <span>Remember me</span>
                 </label>
-                <a href="#" onclick="alert('Please contact PUCIT IT Helpdesk at support@pucit.edu.pk to reset your password.'); return false;">Forgot password?</a>
+                <a href="#forgot" onclick="openForgotModal(); return false;">Forgot password?</a>
             </div>
 
             <!-- Submit Button -->
@@ -214,6 +214,33 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     </div>
 </div>
 
+<!-- Password Reset Help Modal -->
+<div class="detail-modal" id="forgot-modal">
+    <div class="detail-card" style="max-width: 480px;">
+        <button class="btn-close-modal" onclick="closeForgotModal()">&times;</button>
+        <h3>🔐 Password Reset Assistance</h3>
+        <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 16px;">
+            To safeguard student privacy and academic integrity, automated password resets are handled through the official university IT Helpdesk.
+        </p>
+
+        <div style="background: var(--surface-muted); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 14px 16px; margin-bottom: 16px;">
+            <div style="font-size: 13px; font-weight: 600; color: var(--primary); margin-bottom: 6px;">How to reset:</div>
+            <ul style="font-size: 13px; color: var(--text-secondary); padding-left: 20px; line-height: 1.6;">
+                <li>Email from your personal backup address or visit IT Helpdesk (Room 102).</li>
+                <li>Provide your <strong>Student Roll Number</strong> (e.g., <code>bsef22m001</code>).</li>
+                <li>Attach a photo of your valid <strong>PUCIT Student Card</strong>.</li>
+            </ul>
+        </div>
+
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+            <button type="button" class="btn btn-outline btn-sm" onclick="closeForgotModal()">Close</button>
+            <a href="mailto:support@pucit.edu.pk?subject=Password%20Reset%20Request%20-%20PUCIT%20Complaint%20Portal" class="btn btn-primary btn-sm">
+                Email IT Helpdesk
+            </a>
+        </div>
+    </div>
+</div>
+
 <script>
 function togglePassVisibility(inputId, btn) {
     const input = document.getElementById(inputId);
@@ -225,6 +252,22 @@ function togglePassVisibility(inputId, btn) {
         btn.style.color = "var(--text-muted)";
     }
 }
+
+function openForgotModal() {
+    document.getElementById('forgot-modal').classList.add('open');
+}
+
+function closeForgotModal() {
+    document.getElementById('forgot-modal').classList.remove('open');
+}
+
+document.getElementById('forgot-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeForgotModal();
+});
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeForgotModal();
+});
 </script>
 
 </body>
