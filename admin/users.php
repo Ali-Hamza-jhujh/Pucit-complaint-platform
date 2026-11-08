@@ -70,13 +70,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $conn && !$conn->connect_error) {
                 if ($stmt->execute()) {
                     // Dispatch notification email to user
                     if (!empty($target_email)) {
-                        $reset_sub = "PUCIT Portal - Your Password Has Been Reset";
+                        $reset_sub = "PUCIT Portal - Your Temporary Password & Security Reminder";
                         $reset_msg = "Dear {$target_name},\n\n"
-                                   . "Your password for the PUCIT Complaint Portal has been reset by the administration.\n\n"
-                                   . "Your new temporary password is:\n"
-                                   . "    {$temp_pass}\n\n"
-                                   . "Please sign in at http://dev.local/login.php and immediately update your password under your Profile settings.\n\n"
-                                   . "Regards,\nPUCIT Administration";
+                                   . "Your account password for the PUCIT Complaint Portal has been reset by the administration.\n\n"
+                                   . "====================================================\n"
+                                   . "YOUR TEMPORARY PASSWORD: {$temp_pass}\n"
+                                   . "====================================================\n\n"
+                                   . "⚠️ IMPORTANT SECURITY REMINDER:\n"
+                                   . "Please change this temporary password immediately after logging in!\n\n"
+                                   . "How to change your password:\n"
+                                   . "1. Sign in with the temporary password above at: http://dev.local/login.php\n"
+                                   . "2. Click on 'Profile' in the top menu.\n"
+                                   . "3. Enter this temporary password and choose your new personal permanent password.\n\n"
+                                   . "If you have any questions or did not request this, please contact IT Support at " . SUPPORT_EMAIL . ".\n\n"
+                                   . "Regards,\nPUCIT Administration\nPunjab University College of Information Technology";
                         send_system_email($target_email, $reset_sub, $reset_msg);
 
                         // Also send copy to Admin so admin has a record in their Gmail
