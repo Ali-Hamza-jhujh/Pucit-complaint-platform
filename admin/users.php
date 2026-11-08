@@ -18,23 +18,34 @@ $admin_name = $_SESSION['user_name'] ?? 'Admin';
 $msg   = '';
 $error = '';
 
+// Flash message handler for Post/Redirect/Get pattern
+if (!empty($_SESSION['flash_users_msg'])) {
+    $msg = $_SESSION['flash_users_msg'];
+    unset($_SESSION['flash_users_msg']);
+}
+if (!empty($_SESSION['flash_users_error'])) {
+    $error = $_SESSION['flash_users_error'];
+    unset($_SESSION['flash_users_error']);
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $conn && !$conn->connect_error) {
+    $redirect_url = 'users.php' . (!empty($_SERVER['QUERY_STRING']) ? '?' . $_SERVER['QUERY_STRING'] : '');
     if (!verify_csrf($_POST['csrf_token'] ?? '')) {
-        $error = "Security token expired or invalid. Please refresh and try again.";
+        $_SESSION['flash_users_error'] = "Security token expired or invalid. Please refresh and try again.";
     }
     // Toggle active / suspended status
     elseif (isset($_POST['toggle_status'])) {
         $target_id = intval($_POST['user_id'] ?? 0);
         if ($target_id === $admin_id) {
-            $error = "You cannot deactivate your own administrative account.";
+            $_SESSION['flash_users_error'] = "You cannot deactivate your own administrative account.";
         } elseif ($target_id > 0) {
             $stmt = $conn->prepare("UPDATE USERS SET is_active = NOT is_active WHERE id = ?");
             if ($stmt) {
                 $stmt->bind_param('i', $target_id);
                 if ($stmt->execute()) {
-                    $msg = "User account status updated.";
+                    $_SESSION['flash_users_msg'] = "User account status updated.";
                 } else {
-                    $error = "Failed to update status: " . htmlspecialchars($conn->error);
+                    $_SESSION['flash_users_error'] = "Failed to update status: " . htmlspecialchars($conn->error);
                 }
                 $stmt->close();
             }
@@ -46,7 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $conn && !$conn->connect_error) {
         $temp_pass  = trim($_POST['temp_password'] ?? '');
 
         if ($target_id <= 0 || strlen($temp_pass) < 6) {
-            $error = "Temporary password must be at least 6 characters long.";
+            $_SESSION['flash_users_error'] = "Temporary password must be at least 6 characters long.";
         } else {
             // Fetch target user info
             $u_stmt = $conn->prepare("SELECT name, email FROM USERS WHERE id = ? LIMIT 1");
@@ -88,9 +99,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $conn && !$conn->connect_error) {
                         send_system_email($target_email, $reset_sub, $reset_msg);
                     }
 
-                    $msg = "Password reset successfully for {$target_name}. An official email with the temporary password has been dispatched to <strong>" . htmlspecialchars($target_email) . "</strong>. (Assigned: <code>" . htmlspecialchars($temp_pass) . "</code>)";
+                    $_SESSION['flash_users_msg'] = "Password reset successfully for {$target_name}. An official email with the temporary password has been dispatched to <strong>" . htmlspecialchars($target_email) . "</strong>. (Assigned: <code>" . htmlspecialchars($temp_pass) . "</code>)";
                 } else {
-                    $error = "Failed to reset password: " . htmlspecialchars($conn->error);
+                    $_SESSION['flash_users_error'] = "Failed to reset password: " . htmlspecialchars($conn->error);
                 }
                 $stmt->close();
             }
@@ -101,20 +112,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $conn && !$conn->connect_error) {
         $target_id = intval($_POST['user_id'] ?? 0);
         $new_role  = trim($_POST['new_role'] ?? '');
         if ($target_id === $admin_id) {
-            $error = "You cannot modify your own administrative role.";
+            $_SESSION['flash_users_error'] = "You cannot modify your own administrative role.";
         } elseif ($target_id > 0 && in_array($new_role, ['student', 'teacher', 'admin'])) {
             $stmt = $conn->prepare("UPDATE USERS SET role = ? WHERE id = ?");
             if ($stmt) {
                 $stmt->bind_param('si', $new_role, $target_id);
                 if ($stmt->execute()) {
-                    $msg = "Role updated to " . ucfirst($new_role) . " for User #{$target_id}.";
+                    $_SESSION['flash_users_msg'] = "Role updated to " . ucfirst($new_role) . " for User #{$target_id}.";
                 } else {
-                    $error = "Failed to update role: " . htmlspecialchars($conn->error);
+                    $_SESSION['flash_users_error'] = "Failed to update role: " . htmlspecialchars($conn->error);
                 }
                 $stmt->close();
             }
         }
     }
+
+    header("Location: {$redirect_url}");
+    exit();
 }
 
 // Stats

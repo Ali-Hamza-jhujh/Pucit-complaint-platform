@@ -2,9 +2,13 @@
 // db.php handles: config, hardened session, DB connection, schema, auth helpers
 require_once "db.php";
 
-// If already logged in, redirect straight to home page
+// If already logged in, redirect to respective dashboard based on role
 if (is_logged_in()) {
-    header("Location: home.php");
+    if (($_SESSION['user_role'] ?? '') === 'admin') {
+        header("Location: admin/index.php");
+    } else {
+        header("Location: home.php");
+    }
     exit();
 }
 

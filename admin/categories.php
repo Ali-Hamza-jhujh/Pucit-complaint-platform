@@ -16,11 +16,21 @@ $admin_name = $_SESSION['user_name'] ?? 'Admin';
 $msg   = '';
 $error = '';
 
+// Flash message handler for Post/Redirect/Get pattern
+if (!empty($_SESSION['flash_cat_msg'])) {
+    $msg = $_SESSION['flash_cat_msg'];
+    unset($_SESSION['flash_cat_msg']);
+}
+if (!empty($_SESSION['flash_cat_error'])) {
+    $error = $_SESSION['flash_cat_error'];
+    unset($_SESSION['flash_cat_error']);
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $conn && !$conn->connect_error) {
 
     // CSRF verification
     if (!verify_csrf($_POST['csrf_token'] ?? '')) {
-        $error = 'Security token expired or invalid. Please refresh and try again.';
+        $_SESSION['flash_cat_error'] = 'Security token expired or invalid. Please refresh and try again.';
     }
     // ---- Create category ----
     elseif (isset($_POST['add_category'])) {
@@ -29,21 +39,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $conn && !$conn->connect_error) {
         $order = intval($_POST['cat_order'] ?? 0);
 
         if ($name === '') {
-            $error = 'Category name is required.';
+            $_SESSION['flash_cat_error'] = 'Category name is required.';
         } else {
             $stmt = $conn->prepare("INSERT INTO categories (name, description, sort_order) VALUES (?, ?, ?)");
             $stmt->bind_param('ssi', $name, $desc, $order);
             if ($stmt->execute()) {
-                $msg = "Category \"{$name}\" created successfully.";
+                $_SESSION['flash_cat_msg'] = "Category \"{$name}\" created successfully.";
             } else {
-                $error = 'Failed to create category: ' . htmlspecialchars($conn->error);
+                $_SESSION['flash_cat_error'] = 'Failed to create category: ' . htmlspecialchars($conn->error);
             }
             $stmt->close();
         }
     }
 
     // ---- Update category ----
-    if (isset($_POST['edit_category'])) {
+    elseif (isset($_POST['edit_category'])) {
         $id    = intval($_POST['cat_id'] ?? 0);
         $name  = trim($_POST['cat_name'] ?? '');
         $desc  = trim($_POST['cat_desc'] ?? '');
@@ -53,25 +63,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $conn && !$conn->connect_error) {
             $stmt = $conn->prepare("UPDATE categories SET name = ?, description = ?, sort_order = ? WHERE id = ?");
             $stmt->bind_param('ssii', $name, $desc, $order, $id);
             if ($stmt->execute()) {
-                $msg = "Category #{$id} updated.";
+                $_SESSION['flash_cat_msg'] = "Category #{$id} updated successfully.";
             } else {
-                $error = 'Update failed: ' . htmlspecialchars($conn->error);
+                $_SESSION['flash_cat_error'] = 'Update failed: ' . htmlspecialchars($conn->error);
             }
             $stmt->close();
+        } else {
+            $_SESSION['flash_cat_error'] = 'Invalid category ID or name.';
         }
     }
 
     // ---- Toggle active/inactive ----
-    if (isset($_POST['toggle_category'])) {
+    elseif (isset($_POST['toggle_category'])) {
         $id = intval($_POST['cat_id'] ?? 0);
         if ($id > 0) {
             $conn->query("UPDATE categories SET is_active = NOT is_active WHERE id = {$id}");
-            $msg = "Category #{$id} toggled.";
+            $_SESSION['flash_cat_msg'] = "Category #{$id} status updated.";
         }
     }
 
     // ---- Delete category ----
-    if (isset($_POST['delete_category'])) {
+    elseif (isset($_POST['delete_category'])) {
         $id = intval($_POST['cat_id'] ?? 0);
         if ($id > 0) {
             // Check if any complaints reference this category
@@ -83,16 +95,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $conn && !$conn->connect_error) {
             $chk->close();
 
             if ($cnt > 0) {
-                $error = "Cannot delete: {$cnt} complaint(s) are linked to this category. Deactivate it instead.";
+                $_SESSION['flash_cat_error'] = "Cannot delete: {$cnt} complaint(s) are linked to this category. Deactivate it instead.";
             } else {
                 $del = $conn->prepare("DELETE FROM categories WHERE id = ?");
                 $del->bind_param('i', $id);
                 $del->execute();
                 $del->close();
-                $msg = "Category #{$id} deleted.";
+                $_SESSION['flash_cat_msg'] = "Category #{$id} deleted successfully.";
             }
         }
     }
+
+    header("Location: categories.php");
+    exit();
 }
 
 // ---- Fetch all categories ----
