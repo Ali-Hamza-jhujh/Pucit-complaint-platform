@@ -23,7 +23,7 @@
 
   --text-primary: #0f172a;
   --text-secondary: #475569;
-  --text-muted: #94a3b8;
+  --text-muted: #a2bbdf;
   --text-inverse: #ffffff;
 
   --radius-sm: 6px;
@@ -456,6 +456,30 @@ line-height: 1.4;
   justify-content: center;
   font-weight: 700;
   font-size: 13px;
+}
+
+.btn-nav,
+.navbar .btn-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: var(--radius-full);
+  transition: var(--transition);
+  text-decoration: none;
+}
+
+.btn-nav:hover,
+.navbar .btn-outline:hover {
+  background: rgba(255, 255, 255, 0.25) !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
+  color: #ffffff !important;
+  text-decoration: none;
 }
 
 .btn-logout {

@@ -290,8 +290,11 @@ if ($conn && !$conn->connect_error) {
             </a>
 
             <div class="nav-actions">
-                <a href="profile.php" class="btn btn-outline btn-sm" style="color: #fff; border-color: rgba(255,255,255,0.3);">
-                    Profile
+                <a href="profile.php" class="btn btn-nav" title="Manage your profile and security">
+                    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    <span>Profile</span>
                 </a>
                 <div class="user-profile-badge">
                     <div class="user-avatar"><?= strtoupper(substr($user_name, 0, 1)) ?></div>

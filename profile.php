@@ -136,8 +136,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             </a>
 
             <div class="nav-actions">
-                <a href="<?= $dashboard_url ?>" class="btn btn-outline btn-sm" style="color: #fff; border-color: rgba(255,255,255,0.3);">
-                    Dashboard
+                <a href="<?= $dashboard_url ?>" class="btn btn-nav" title="Return to Dashboard">
+                    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
+                    <span>Dashboard</span>
                 </a>
                 <div class="user-profile-badge">
                     <div class="user-avatar"><?= strtoupper(substr($user_name, 0, 1)) ?></div>
