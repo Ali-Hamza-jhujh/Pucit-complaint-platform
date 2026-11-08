@@ -17,10 +17,13 @@ if (isset($_GET["registered"])) {
 }
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
     $email = trim($_POST["email"] ?? "");
     $password = $_POST["password"] ?? "";
 
-    if (empty($email) || empty($password)) {
+    if (!check_rate_limit($ip, 'login_attempt', 5, 300)) {
+        $error = "Too many failed login attempts. Please wait 5 minutes before trying again.";
+    } elseif (empty($email) || empty($password)) {
         $error = "Please enter both email and password.";
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = "Please enter a valid email address.";
@@ -74,10 +77,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         exit();
                     }
                 } else {
+                    increment_rate_limit($ip, 'login_attempt');
                     $error = "Invalid email or password. Please try again.";
                 }
             } else {
-                $error = "No student account found with this email address.";
+                increment_rate_limit($ip, 'login_attempt');
+                $error = "Invalid email or password. Please try again.";
             }
             $stmt->close();
         } else {

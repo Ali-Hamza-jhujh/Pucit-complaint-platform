@@ -14,6 +14,7 @@ $name = "";
 $email = "";
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
     $csrf = $_POST["csrf_token"] ?? "";
     $name = trim($_POST["name"] ?? "");
     $email = trim($_POST["email"] ?? "");
@@ -21,7 +22,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $c_pass = $_POST["c_password"] ?? "";
 
     // Validation
-    if (!verify_csrf($csrf)) {
+    if (!check_rate_limit($ip, 'register_attempt', 5, 3600)) {
+        $error = "Too many registration attempts. Please wait an hour before trying again.";
+    } elseif (!verify_csrf($csrf)) {
         $error = "Security token expired or invalid. Please refresh and try again.";
     } elseif (empty($name) || empty($email) || empty($pass) || empty($c_pass)) {
         $error = "Please fill in all required fields.";
@@ -53,6 +56,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 if ($insert_stmt) {
                     $insert_stmt->bind_param("sss", $name, $email, $hashed_pass);
                     if ($insert_stmt->execute()) {
+                        increment_rate_limit($ip, 'register_attempt');
                         // Redirect to login page with success message
                         header("Location: login.php?registered=1");
                         exit();
