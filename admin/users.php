@@ -78,9 +78,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $conn && !$conn->connect_error) {
                                    . "Please sign in at http://dev.local/login.php and immediately update your password under your Profile settings.\n\n"
                                    . "Regards,\nPUCIT Administration";
                         send_system_email($target_email, $reset_sub, $reset_msg);
+
+                        // Also send copy to Admin so admin has a record in their Gmail
+                        if ($target_email !== SUPPORT_EMAIL) {
+                            $admin_copy_sub = "PUCIT Portal - Password Reset Issued for {$target_name} (#{$target_id})";
+                            $admin_copy_msg = "Administrative Notice:\n\n"
+                                            . "You reset the password for User #{$target_id} ({$target_name} - {$target_email}).\n"
+                                            . "Temporary Password Assigned: {$temp_pass}\n"
+                                            . "Timestamp: " . date("Y-m-d H:i:s") . "\n\n"
+                                            . "Regards,\nPUCIT Portal";
+                            send_system_email(SUPPORT_EMAIL, $admin_copy_sub, $admin_copy_msg);
+                        }
                     }
 
-                    $msg = "Password reset successfully for {$target_name}. An official email with the temporary password has been dispatched to {$target_email}.";
+                    $msg = "Password reset successfully for {$target_name}. Temporary Password: <strong>" . htmlspecialchars($temp_pass) . "</strong> (Email dispatched to {$target_email}).";
                 } else {
                     $error = "Failed to reset password: " . htmlspecialchars($conn->error);
                 }
@@ -253,7 +264,7 @@ if ($conn && !$conn->connect_error) {
         </div>
 
         <?php if (!empty($msg)): ?>
-            <div class="alert alert-success"><span><?= htmlspecialchars($msg) ?></span></div>
+            <div class="alert alert-success"><span><?= $msg ?></span></div>
         <?php endif; ?>
         <?php if (!empty($error)): ?>
             <div class="alert alert-danger"><span><?= htmlspecialchars($error) ?></span></div>
