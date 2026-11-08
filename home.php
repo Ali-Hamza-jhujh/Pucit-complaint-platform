@@ -161,6 +161,9 @@ if ($conn && !$conn->connect_error) {
             </a>
 
             <div class="nav-actions">
+                <a href="profile.php" class="btn btn-outline btn-sm" style="color: #fff; border-color: rgba(255,255,255,0.3);">
+                    Profile
+                </a>
                 <div class="user-profile-badge">
                     <div class="user-avatar"><?= strtoupper(substr($user_name, 0, 1)) ?></div>
                     <span><?= htmlspecialchars($user_name) ?></span>
