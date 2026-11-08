@@ -357,7 +357,7 @@ if ($conn && !$conn->connect_error) {
                                                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
                                                         <input type="hidden" name="user_id" value="<?= $u['id'] ?>">
                                                         <input type="hidden" name="change_user_role" value="1">
-                                                        <select name="new_role" onchange="if(confirm('Change role to ' + this.value + '?')) this.form.submit(); else this.value='<?= $u['role'] ?>';" style="padding: 4px 6px; font-size: 11px; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-primary); cursor: pointer;" title="Change account role">
+                                                        <select name="new_role" onchange="if(confirm('Change role to ' + this.value + '?')) this.form.submit(); else this.value='<?= $u['role'] ?>';" style="padding: 4px 6px; font-size: 11px; border-radius: 4px; border: 1.5px solid #cbd5e1; background: #ffffff; color: var(--text-primary); cursor: pointer;" title="Change account role">
                                                             <option value="student" <?= $u['role'] === 'student' ? 'selected' : '' ?>>Student</option>
                                                             <option value="teacher" <?= $u['role'] === 'teacher' ? 'selected' : '' ?>>Teacher</option>
                                                             <option value="admin"   <?= $u['role'] === 'admin'   ? 'selected' : '' ?>>Admin</option>

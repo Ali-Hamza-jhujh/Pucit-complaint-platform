@@ -408,16 +408,16 @@ if ($conn && !$conn->connect_error) {
                 </div>
 
                 <!-- Filters Bar -->
-                <form method="GET" action="home.php" class="filters-bar" style="margin: 0; padding: 10px 16px; border-bottom: 1px solid var(--border-color); background: var(--surface-muted); display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
+                <form method="GET" action="home.php" class="table-filter-header">
                     <input type="hidden" name="view" value="<?= htmlspecialchars($view_scope) ?>">
-                    <select name="status" style="padding: 5px 8px; font-size: 12px; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-primary);">
+                    <select name="status" class="filter-input-select">
                         <option value="">All Statuses</option>
                         <option value="Pending"   <?= $filter_status === 'Pending'   ? 'selected' : '' ?>>Pending</option>
                         <option value="In Review" <?= $filter_status === 'In Review' ? 'selected' : '' ?>>In Review</option>
                         <option value="Resolved"  <?= $filter_status === 'Resolved'  ? 'selected' : '' ?>>Resolved</option>
                         <option value="Dismissed" <?= $filter_status === 'Dismissed' ? 'selected' : '' ?>>Dismissed</option>
                     </select>
-                    <select name="category" style="padding: 5px 8px; font-size: 12px; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-primary);">
+                    <select name="category" class="filter-input-select">
                         <option value="">All Categories</option>
                         <?php foreach ($categories_list as $cat): ?>
                             <option value="<?= htmlspecialchars($cat['name']) ?>" <?= $filter_category === $cat['name'] ? 'selected' : '' ?>>
@@ -425,7 +425,12 @@ if ($conn && !$conn->connect_error) {
                             </option>
                         <?php endforeach; ?>
                     </select>
-                    <input type="text" name="q" placeholder="Search subject or description..." value="<?= htmlspecialchars($search_query) ?>" style="padding: 5px 8px; font-size: 12px; border-radius: 4px; border: 1px solid var(--border-color); flex: 1; min-width: 140px; background: var(--bg-card); color: var(--text-primary);">
+                    <div class="filter-search-wrap">
+                        <svg class="filter-search-icon" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        <input type="text" name="q" class="filter-input-text" placeholder="Search subject or description..." value="<?= htmlspecialchars($search_query) ?>">
+                    </div>
                     <button type="submit" class="btn btn-primary btn-sm">Filter</button>
                     <a href="home.php?view=<?= urlencode($view_scope) ?>" class="btn btn-outline btn-sm">Clear</a>
                 </form>
