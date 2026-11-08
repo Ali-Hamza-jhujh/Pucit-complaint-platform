@@ -114,7 +114,7 @@ if ($conn && !$conn->connect_error) {
         description  TEXT         NOT NULL,
         priority     VARCHAR(20)  NOT NULL DEFAULT 'Medium',
         status       VARCHAR(30)  NOT NULL DEFAULT 'Pending',
-        is_anonymous TINYINT(1)   NOT NULL DEFAULT 1,
+        is_anonymous TINYINT(1)   NOT NULL DEFAULT 0,
         image_path   VARCHAR(255) DEFAULT NULL,
         admin_notes  TEXT         DEFAULT NULL,
         created_at   TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
@@ -123,7 +123,7 @@ if ($conn && !$conn->connect_error) {
 
     // Migration: add new columns to any pre-existing complaints table
     @$conn->query("ALTER TABLE complaints
-                   ADD COLUMN IF NOT EXISTS is_anonymous TINYINT(1) NOT NULL DEFAULT 1");
+                   ADD COLUMN IF NOT EXISTS is_anonymous TINYINT(1) NOT NULL DEFAULT 0");
     @$conn->query("ALTER TABLE complaints
                    ADD COLUMN IF NOT EXISTS image_path   VARCHAR(255) DEFAULT NULL");
     @$conn->query("ALTER TABLE complaints

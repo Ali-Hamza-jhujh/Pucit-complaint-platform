@@ -46,10 +46,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["submit_complaint"])) 
                 }
             }
 
-            // Prepare insert with optional image_path
-            $ins = $conn->prepare("INSERT INTO complaints (user_id, user_name, title, category, description, priority, status, image_path) VALUES (?, ?, ?, ?, ?, ?, 'Pending', ?)");
+            // Determine anonymity flag
+    $isAnonymous = isset($_POST['anonymous']) ? 1 : 0;
+            $ins = $conn->prepare("INSERT INTO complaints (user_id, user_name, title, category, description, priority, status, image_path, is_anonymous) VALUES (?, ?, ?, ?, ?, ?, 'Pending', ?, ?)");
         if ($ins) {
-            $ins->bind_param("isssss", $user_id, $user_name, $title, $category, $description, $priority);
+            $ins->bind_param("issssssi", $user_id, $user_name, $title, $category, $description, $priority, $image_path, $isAnonymous);
             if ($ins->execute()) {
                 $complaint_msg = "Your complaint #{$ins->insert_id} has been submitted successfully to PUCIT Administration.";
             } else {
@@ -329,7 +330,13 @@ if ($conn && !$conn->connect_error) {
                             <textarea name="description" id="description" class="form-control" rows="4" style="padding-left: 14px; resize: vertical;" placeholder="Provide details like room number, error message, or issue specifics..." required></textarea>
                         </div>
 
-                        <button type="submit" name="submit_complaint" class="btn btn-primary btn-block">
+                        <div class="form-group">
+    <div class="form-check">
+        <input class="form-check-input" type="checkbox" name="anonymous" id="anonymous" value="1">
+        <label class="form-check-label" for="anonymous">Submit anonymously (your name will not be shown)</label>
+    </div>
+</div>
+<button type="submit" name="submit_complaint" class="btn btn-primary btn-block">
                             <span>Submit Complaint</span>
                             <svg width="18" height="18" style="width: 18px; height: 18px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
