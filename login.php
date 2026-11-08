@@ -28,7 +28,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $error = "Database connection error. Please ensure MySQL is active (sudo service mysql start).";
     } else {
         // Prepare secure statement to look up user
-        $stmt = $conn->prepare("SELECT id, name, email, password FROM USERS WHERE email = ? LIMIT 1");
+        $stmt = $conn->prepare("SELECT id, name, email, password, role FROM USERS WHERE email = ? LIMIT 1");
         
         if ($stmt) {
             $stmt->bind_param("s", $email);
