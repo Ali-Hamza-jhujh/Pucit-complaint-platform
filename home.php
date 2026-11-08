@@ -378,11 +378,11 @@ if ($conn && !$conn->connect_error) {
                         </div>
 
                         <div class="form-group">
-    <div class="form-check">
-        <input class="form-check-input" type="checkbox" name="anonymous" id="anonymous" value="1">
-        <label class="form-check-label" for="anonymous">Submit anonymously (your name will not be shown)</label>
-    </div>
-</div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="anonymous" id="anonymous" value="1" checked>
+                                <label class="form-check-label" for="anonymous">Submit anonymously (identity protected from public view)</label>
+                            </div>
+                        </div>
 <button type="submit" name="submit_complaint" class="btn btn-primary btn-block">
                             <span>Submit Complaint</span>
                             <svg width="18" height="18" style="width: 18px; height: 18px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
