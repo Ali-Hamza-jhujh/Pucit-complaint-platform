@@ -24,6 +24,9 @@ Options -Indexes
     # Block direct HTTP access to the includes/ directory
     RewriteRule ^includes(/.*)?$ - [F,L]
 
+    # Block direct HTTP access to the logs/ directory
+    RewriteRule ^logs(/.*)?$ - [F,L]
+
     # Block PHP execution inside the uploads/ directory
     RewriteRule ^uploads/.*\.(php[0-9]?|phtml|phar|shtml)$ - [F,L]
 

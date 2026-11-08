@@ -266,6 +266,12 @@ if ($conn && !$conn->connect_error) {
                     <a href="users.php">Users</a>
                     <a href="logs.php">Audit Logs</a>
                 </div>
+                <a href="../home.php" class="btn btn-nav" title="Switch to Student / Faculty Portal">
+                    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
+                    <span>Campus Portal</span>
+                </a>
                 <div class="user-profile-badge">
                     <div class="user-avatar"><?= strtoupper(substr($admin_name, 0, 1)) ?></div>
                     <span><?= htmlspecialchars($admin_name) ?></span>
@@ -533,7 +539,9 @@ if ($conn && !$conn->connect_error) {
             <?php if (!empty($c['image_path'])): ?>
             <div class="detail-row">
                 <div class="detail-label">Attached Image</div>
-                <img src="<?= htmlspecialchars('../' . ltrim($c['image_path'], '/')) ?>" alt="Complaint image" class="complaint-img">
+                <a href="<?= htmlspecialchars('../' . ltrim($c['image_path'], '/')) ?>" target="_blank" rel="noopener" title="Click to view full image">
+                    <img src="<?= htmlspecialchars('../' . ltrim($c['image_path'], '/')) ?>" alt="Complaint image" class="complaint-img">
+                </a>
             </div>
             <?php endif; ?>
 

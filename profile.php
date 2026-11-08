@@ -90,22 +90,22 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     } elseif (isset($_POST["update_name"])) {
         $new_name = trim($_POST["name"] ?? "");
         if (empty($new_name)) {
-            $error = "Name cannot be empty.";
+            $_SESSION['flash_profile_error'] = "Name cannot be empty.";
         } elseif ($conn && !$conn->connect_error) {
             $u_stmt = $conn->prepare("UPDATE USERS SET name = ? WHERE id = ?");
             if ($u_stmt) {
                 $u_stmt->bind_param("si", $new_name, $user_id);
                 if ($u_stmt->execute()) {
                     $_SESSION["user_name"] = $new_name;
-                    $user_name = $new_name;
-                    if ($user_data) $user_data["name"] = $new_name;
-                    $success = "Profile name updated successfully.";
+                    $_SESSION['flash_profile_success'] = "Profile name updated successfully.";
                 } else {
-                    $error = "Failed to update name: " . htmlspecialchars($conn->error);
+                    $_SESSION['flash_profile_error'] = "Failed to update name: " . htmlspecialchars($conn->error);
                 }
                 $u_stmt->close();
             }
         }
+        header("Location: profile.php");
+        exit();
     }
 }
 ?>

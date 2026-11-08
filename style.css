@@ -918,7 +918,7 @@ line-height: 1.4;
 .filters-bar input[type="number"] {
   padding: 8px 12px;
   font-size: 13px;
-  border: 1.5px solid var(--border);
+  border: 1.5px solid var(--border-color);
   border-radius: var(--radius-sm);
   font-family: inherit;
   min-width: 160px;

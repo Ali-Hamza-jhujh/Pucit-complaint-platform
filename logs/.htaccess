@@ -1,0 +1,9 @@
+# ============================================================
+# logs/.htaccess — Protect system audit and email logs
+# ============================================================
+
+# Disable directory listing
+Options -Indexes
+
+# Deny all direct web access to log files
+Require all denied
