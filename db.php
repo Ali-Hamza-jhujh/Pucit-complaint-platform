@@ -175,6 +175,16 @@ if ($conn && !$conn->connect_error) {
         created_at   TIMESTAMP   DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
+    $fk_act_c = $conn->query("SELECT CONSTRAINT_NAME FROM information_schema.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'admin_actions' AND CONSTRAINT_NAME = 'fk_actions_complaint'");
+    if ($fk_act_c && $fk_act_c->num_rows === 0) {
+        @$conn->query("ALTER TABLE admin_actions ADD CONSTRAINT fk_actions_complaint FOREIGN KEY (complaint_id) REFERENCES complaints(id) ON DELETE CASCADE");
+    }
+
+    $fk_act_a = $conn->query("SELECT CONSTRAINT_NAME FROM information_schema.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'admin_actions' AND CONSTRAINT_NAME = 'fk_actions_admin'");
+    if ($fk_act_a && $fk_act_a->num_rows === 0) {
+        @$conn->query("ALTER TABLE admin_actions ADD CONSTRAINT fk_actions_admin FOREIGN KEY (admin_id) REFERENCES USERS(id) ON DELETE CASCADE");
+    }
+
     // ================================================================
     // TABLE: complaint_images
     // Stores paths to optional uploaded images.
@@ -189,6 +199,11 @@ if ($conn && !$conn->connect_error) {
         mime_type     VARCHAR(100) DEFAULT NULL,
         uploaded_at   TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+    $fk_img = $conn->query("SELECT CONSTRAINT_NAME FROM information_schema.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'complaint_images' AND CONSTRAINT_NAME = 'fk_images_complaint'");
+    if ($fk_img && $fk_img->num_rows === 0) {
+        @$conn->query("ALTER TABLE complaint_images ADD CONSTRAINT fk_images_complaint FOREIGN KEY (complaint_id) REFERENCES complaints(id) ON DELETE CASCADE");
+    }
 
     // ================================================================
     // TABLE: rate_limits
