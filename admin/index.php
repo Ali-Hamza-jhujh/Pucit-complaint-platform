@@ -177,6 +177,24 @@ if ($conn && !$conn->connect_error) {
         }
         $stmt->close();
     }
+
+    // Fetch administrative action & resolution history for loaded complaints
+    $complaint_history = [];
+    if (!empty($complaints)) {
+        $c_ids = array_map(function($c) { return intval($c['id']); }, $complaints);
+        $in_clause = implode(',', $c_ids);
+        $hist_sql = "SELECT a.*, u.name AS handler_name, u.role AS handler_role
+                     FROM admin_actions a
+                     LEFT JOIN USERS u ON a.admin_id = u.id
+                     WHERE a.complaint_id IN ({$in_clause})
+                     ORDER BY a.id ASC";
+        $hist_res = $conn->query($hist_sql);
+        if ($hist_res) {
+            while ($h = $hist_res->fetch_assoc()) {
+                $complaint_history[$h['complaint_id']][] = $h;
+            }
+        }
+    }
 }
 
 // Fetch categories for filter dropdown
@@ -364,7 +382,20 @@ if ($conn && !$conn->connect_error) {
                                                 <?= htmlspecialchars($c['student_name'] ?? 'Unknown') ?>
                                             </small>
                                         </td>
-                                        <td><small style="color: var(--text-muted);"><?= date('M d, Y', strtotime($c['created_at'])) ?></small></td>
+                                        <td>
+                                            <div style="font-size: 12px; line-height: 1.4;">
+                                                <div><span style="color: var(--text-muted);">Filed:</span> <?= date('M d, Y', strtotime($c['created_at'])) ?></div>
+                                                <?php if ($c['status'] === 'Resolved' && !empty($c['updated_at'])): ?>
+                                                    <div style="color: #065f46; font-weight: 600; font-size: 11px; margin-top: 2px;">
+                                                        ✓ <?= date('M d, Y', strtotime($c['updated_at'])) ?>
+                                                    </div>
+                                                <?php elseif (!empty($c['updated_at']) && $c['updated_at'] !== $c['created_at']): ?>
+                                                    <div style="color: #0284c7; font-size: 11px; margin-top: 2px;">
+                                                        ↻ <?= date('M d, Y', strtotime($c['updated_at'])) ?>
+                                                    </div>
+                                                <?php endif; ?>
+                                            </div>
+                                        </td>
                                         <td>
                                             <button type="button" class="btn btn-outline btn-sm" onclick="openDetail(<?= $c['id'] ?>)">View</button>
                                         </td>
@@ -441,6 +472,28 @@ if ($conn && !$conn->connect_error) {
                 <div class="detail-value"><?= date('F d, Y — h:i A', strtotime($c['created_at'])) ?></div>
             </div>
 
+            <?php if ($c['status'] === 'Resolved'): ?>
+            <div class="detail-row">
+                <div class="detail-label">Resolved On</div>
+                <div class="detail-value" style="color: #065f46; font-weight: 600;">
+                    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" style="vertical-align: -2px; margin-right: 4px; color: #10b981;">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <?= date('F d, Y — h:i A', strtotime($c['updated_at'])) ?>
+                </div>
+            </div>
+            <?php elseif (!empty($c['updated_at']) && $c['updated_at'] !== $c['created_at']): ?>
+            <div class="detail-row">
+                <div class="detail-label">Last Status Update</div>
+                <div class="detail-value" style="color: #0369a1; font-weight: 600;">
+                    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="vertical-align: -2px; margin-right: 4px; color: #0284c7;">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <?= date('F d, Y — h:i A', strtotime($c['updated_at'])) ?>
+                </div>
+            </div>
+            <?php endif; ?>
+
             <?php if (!empty($c['image_path'])): ?>
             <div class="detail-row">
                 <div class="detail-label">Attached Image</div>
@@ -474,6 +527,97 @@ if ($conn && !$conn->connect_error) {
                     <small style="color: #b45309;">⚠ This complaint was filed anonymously. The student's identity is hidden from public view.</small>
                 <?php endif; ?>
             </div>
+
+            <!-- Complete Action & Resolution History Dropdown -->
+            <?php $hist_items = $complaint_history[$c['id']] ?? []; ?>
+            <details class="ticket-history-dropdown" <?= !empty($hist_items) ? 'open' : '' ?>>
+                <summary class="history-dropdown-summary">
+                    <div class="history-dropdown-title">
+                        <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>Audit Trail & Status History</span>
+                    </div>
+                    <div class="history-dropdown-meta">
+                        <span class="history-count-badge">
+                            <?= count($hist_items) ?> <?= count($hist_items) === 1 ? 'update' : 'updates' ?>
+                        </span>
+                        <svg class="history-chevron" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </div>
+                </summary>
+                <div class="history-dropdown-body">
+                    <div class="timeline-container">
+                        <?php if (!empty($hist_items)): ?>
+                            <?php foreach (array_reverse($hist_items) as $h): ?>
+                                <?php
+                                    $h_st = strtolower($h['new_status'] ?? '');
+                                    $dot_cls = 'timeline-dot-pending';
+                                    $badge_h = 'badge-pending';
+                                    if ($h_st === 'in review') { $dot_cls = 'timeline-dot-progress'; $badge_h = 'badge-progress'; }
+                                    elseif ($h_st === 'resolved') { $dot_cls = 'timeline-dot-resolved'; $badge_h = 'badge-resolved'; }
+                                    elseif ($h_st === 'dismissed') { $dot_cls = 'timeline-dot-dismissed'; $badge_h = 'badge-high'; }
+                                ?>
+                                <div class="timeline-item">
+                                    <div class="timeline-dot <?= $dot_cls ?>"></div>
+                                    <div class="timeline-content">
+                                        <div class="timeline-header">
+                                            <div class="timeline-status-change">
+                                                <span class="badge <?= $badge_h ?>"><?= htmlspecialchars($h['new_status']) ?></span>
+                                                <?php if (!empty($h['old_status']) && $h['old_status'] !== $h['new_status']): ?>
+                                                    <span class="timeline-status-arrow">← from <?= htmlspecialchars($h['old_status']) ?></span>
+                                                <?php endif; ?>
+                                            </div>
+                                            <div class="timeline-time">
+                                                <?= date('M d, Y · h:i A', strtotime($h['created_at'])) ?>
+                                            </div>
+                                        </div>
+                                        <div class="timeline-handler">
+                                            <span class="timeline-handler-icon">
+                                                <?php if (($h['handler_role'] ?? '') === 'teacher'): ?>
+                                                    👨‍🏫 Teacher / Faculty
+                                                <?php else: ?>
+                                                    🏛️ PUCIT Administration
+                                                <?php endif; ?>
+                                            </span>
+                                            <?php if (!empty($h['handler_name'])): ?>
+                                                <span class="timeline-handler-name">(<?= htmlspecialchars($h['handler_name']) ?>)</span>
+                                            <?php endif; ?>
+                                        </div>
+                                        <?php if (!empty($h['notes'])): ?>
+                                            <div class="timeline-notes">
+                                                <div class="timeline-notes-label">Resolution / Action Remarks:</div>
+                                                <div class="timeline-notes-text"><?= nl2br(htmlspecialchars($h['notes'])) ?></div>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+
+                        <!-- Initial lodging event -->
+                        <div class="timeline-item timeline-item-origin">
+                            <div class="timeline-dot timeline-dot-origin"></div>
+                            <div class="timeline-content">
+                                <div class="timeline-header">
+                                    <div class="timeline-status-change">
+                                        <span class="badge badge-pending">Pending</span>
+                                        <span class="timeline-status-arrow">Initial Submission</span>
+                                    </div>
+                                    <div class="timeline-time">
+                                        <?= date('M d, Y · h:i A', strtotime($c['created_at'])) ?>
+                                    </div>
+                                </div>
+                                <div class="timeline-handler">
+                                    <span class="timeline-handler-icon">📝 Student</span>
+                                    <span class="timeline-handler-name">Ticket Lodged</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </details>
 
             <!-- Status Update Form -->
             <form method="POST" action="index.php" class="action-form">

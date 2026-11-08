@@ -18,6 +18,16 @@ $dashboard_url = ($user_role === 'admin') ? 'admin/index.php' : 'home.php';
 $error   = "";
 $success = "";
 
+// Flash message check from Post/Redirect/Get
+if (!empty($_SESSION['flash_profile_success'])) {
+    $success = $_SESSION['flash_profile_success'];
+    unset($_SESSION['flash_profile_success']);
+}
+if (!empty($_SESSION['flash_profile_error'])) {
+    $error = $_SESSION['flash_profile_error'];
+    unset($_SESSION['flash_profile_error']);
+}
+
 // Fetch current user details from DB
 $user_data = null;
 if ($conn && !$conn->connect_error) {
@@ -65,7 +75,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     if ($upd_stmt) {
                         $upd_stmt->bind_param("si", $new_hash, $user_id);
                         if ($upd_stmt->execute()) {
-                            $success = "Your password has been updated successfully.";
+                            $_SESSION['flash_profile_success'] = "Your password has been updated successfully.";
+                            $upd_stmt->close();
+                            header("Location: profile.php");
+                            exit();
                         } else {
                             $error = "Failed to update password: " . htmlspecialchars($conn->error);
                         }

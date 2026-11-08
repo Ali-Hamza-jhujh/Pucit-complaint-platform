@@ -961,3 +961,231 @@ line-height: 1.4;
   gap: 8px;
   align-items: center;
 }
+
+/* =========================================================
+   STATUS & RESOLUTION TIMELINE DROPDOWN
+   ========================================================= */
+.ticket-history-dropdown {
+  margin-top: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: #ffffff;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition);
+}
+
+.ticket-history-dropdown[open] {
+  border-color: #cbd5e1;
+  box-shadow: var(--shadow-md);
+}
+
+.history-dropdown-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #f8fafc;
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  font-weight: 600;
+  font-size: 13.5px;
+  color: var(--primary);
+  border-bottom: 1px solid transparent;
+  transition: var(--transition);
+}
+
+.history-dropdown-summary::-webkit-details-marker {
+  display: none;
+}
+
+.history-dropdown-summary:hover {
+  background: #f1f5f9;
+}
+
+.ticket-history-dropdown[open] .history-dropdown-summary {
+  border-bottom-color: var(--border);
+  background: #f8fafc;
+}
+
+.history-dropdown-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--primary);
+}
+
+.history-dropdown-title svg {
+  color: var(--secondary);
+}
+
+.history-dropdown-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.history-count-badge {
+  background: #e0e7ff;
+  color: #3730a3;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+}
+
+.history-chevron {
+  transition: transform 0.2s ease;
+  color: var(--text-muted);
+}
+
+.ticket-history-dropdown[open] .history-chevron {
+  transform: rotate(180deg);
+}
+
+.history-dropdown-body {
+  padding: 16px 20px 20px 20px;
+  background: #ffffff;
+}
+
+/* Timeline Layout */
+.timeline-container {
+  position: relative;
+  padding-left: 24px;
+}
+
+.timeline-container::before {
+  content: "";
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  left: 7px;
+  width: 2px;
+  background: #e2e8f0;
+}
+
+.timeline-item {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.timeline-item:last-child {
+  margin-bottom: 0;
+}
+
+.timeline-dot {
+  position: absolute;
+  left: -24px;
+  top: 4px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 3px solid #ffffff;
+  box-shadow: 0 0 0 1px #cbd5e1;
+  background: #94a3b8;
+  z-index: 1;
+}
+
+.timeline-dot-pending {
+  background: #f59e0b;
+  box-shadow: 0 0 0 1px #f59e0b;
+}
+
+.timeline-dot-progress {
+  background: #8b5cf6;
+  box-shadow: 0 0 0 1px #8b5cf6;
+}
+
+.timeline-dot-resolved {
+  background: #10b981;
+  box-shadow: 0 0 0 1px #10b981;
+}
+
+.timeline-dot-dismissed {
+  background: #ef4444;
+  box-shadow: 0 0 0 1px #ef4444;
+}
+
+.timeline-dot-origin {
+  background: #64748b;
+  box-shadow: 0 0 0 1px #64748b;
+}
+
+.timeline-content {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+}
+
+.timeline-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.timeline-status-change {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.timeline-status-arrow {
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+.timeline-time {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.timeline-handler {
+  font-size: 12px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.timeline-handler-icon {
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.timeline-handler-name {
+  color: var(--text-muted);
+  font-size: 11.5px;
+}
+
+.timeline-notes {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: #ffffff;
+  border-left: 3px solid #3b82f6;
+  border-radius: 4px;
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.45;
+}
+
+.timeline-notes-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+  letter-spacing: 0.5px;
+}
+
+.timeline-item-origin .timeline-content {
+  background: #ffffff;
+  border-style: dashed;
+}
