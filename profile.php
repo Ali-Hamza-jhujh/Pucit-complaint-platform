@@ -13,6 +13,7 @@ $user_id    = (int)($_SESSION["user_id"] ?? 0);
 $user_name  = $_SESSION["user_name"] ?? "Student";
 $user_email = $_SESSION["user_email"] ?? "";
 $user_role  = $_SESSION["user_role"] ?? "student";
+$dashboard_url = ($user_role === 'admin') ? 'admin/index.php' : 'home.php';
 
 $error   = "";
 $success = "";
@@ -108,7 +109,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     <!-- Main Navigation Bar -->
     <nav class="navbar">
         <div class="nav-container">
-            <a href="home.php" class="nav-brand">
+            <a href="<?= $dashboard_url ?>" class="nav-brand">
                 <div class="nav-logo-icon">
                     <svg width="24" height="24" style="width: 24px; height: 24px;" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M12 3L1 9L12 15L21 10.09V17H23V9M5 13.18V17.18C5 19.94 8.13 22 12 22C15.87 22 19 19.94 19 17.18V13.18L12 17L5 13.18Z" />
@@ -116,12 +117,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 </div>
                 <div>
                     <div class="nav-title-text">PUCIT Complaint Portal</div>
-                    <div class="nav-subtitle-text">Student Grievance System</div>
+                    <div class="nav-subtitle-text"><?= $user_role === 'admin' ? 'Administrative Access' : 'Student Grievance System' ?></div>
                 </div>
             </a>
 
             <div class="nav-actions">
-                <a href="home.php" class="btn btn-outline btn-sm" style="color: #fff; border-color: rgba(255,255,255,0.3);">
+                <a href="<?= $dashboard_url ?>" class="btn btn-outline btn-sm" style="color: #fff; border-color: rgba(255,255,255,0.3);">
                     Dashboard
                 </a>
                 <div class="user-profile-badge">
@@ -165,7 +166,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
-                    <span>Student Profile Details</span>
+                    <span>Account Profile Details</span>
                 </h3>
             </div>
             <div class="panel-body">
