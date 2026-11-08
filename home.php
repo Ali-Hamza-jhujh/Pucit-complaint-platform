@@ -127,18 +127,26 @@ $resolved_count = 0;
 $dismissed_count = 0;
 $complaints_list = [];
 
+$view_scope = trim($_GET['view'] ?? 'my');
+if ($view_scope !== 'all') {
+    $view_scope = 'my';
+}
+
 $filter_status = trim($_GET['status'] ?? '');
+$filter_category = trim($_GET['category'] ?? '');
+$search_query = trim($_GET['q'] ?? '');
 $valid_statuses = ['Pending', 'In Review', 'Resolved', 'Dismissed'];
 
 if ($conn && !$conn->connect_error) {
-    // Stats query (overall)
+    // Stats query - scoped to active view (my tickets vs campus feed)
+    $scope_condition = ($view_scope === 'my') ? "WHERE user_id = " . intval($user_id) : "WHERE 1=1";
     $st = $conn->query("SELECT 
         COUNT(*) as total,
         SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) as pending,
         SUM(CASE WHEN status = 'In Review' THEN 1 ELSE 0 END) as in_review,
         SUM(CASE WHEN status = 'Resolved' THEN 1 ELSE 0 END) as resolved,
         SUM(CASE WHEN status = 'Dismissed' THEN 1 ELSE 0 END) as dismissed
-        FROM complaints WHERE user_id = " . intval($user_id));
+        FROM complaints {$scope_condition}");
     
     if ($st && $row = $st->fetch_assoc()) {
         $total_count     = (int)($row["total"] ?? 0);
@@ -149,29 +157,70 @@ if ($conn && !$conn->connect_error) {
     }
 
     // Build filter clause
-    $where_sql = "WHERE user_id = " . intval($user_id);
-    if ($filter_status !== '' && in_array($filter_status, $valid_statuses)) {
-        $where_sql .= " AND status = '" . $conn->real_escape_string($filter_status) . "'";
+    $where = [];
+    $bind_types = '';
+    $bind_params = [];
+
+    if ($view_scope === 'my') {
+        $where[] = "user_id = ?";
+        $bind_types .= 'i';
+        $bind_params[] = $user_id;
     }
+
+    if ($filter_status !== '' && in_array($filter_status, $valid_statuses)) {
+        $where[] = "status = ?";
+        $bind_types .= 's';
+        $bind_params[] = $filter_status;
+    }
+
+    if ($filter_category !== '') {
+        $where[] = "category = ?";
+        $bind_types .= 's';
+        $bind_params[] = $filter_category;
+    }
+
+    if ($search_query !== '') {
+        $where[] = "(title LIKE ? OR description LIKE ?)";
+        $bind_types .= 'ss';
+        $like = "%{$search_query}%";
+        $bind_params[] = $like;
+        $bind_params[] = $like;
+    }
+
+    $where_sql = count($where) > 0 ? "WHERE " . implode(" AND ", $where) : "";
 
     // Pagination calculation
     $per_page = 10;
     $page = max(1, intval($_GET['page'] ?? 1));
-    $cnt_res = $conn->query("SELECT COUNT(*) AS cnt FROM complaints " . $where_sql);
+    $cnt_stmt = $conn->prepare("SELECT COUNT(*) AS cnt FROM complaints " . $where_sql);
     $total_filtered = 0;
-    if ($cnt_res && $cr = $cnt_res->fetch_assoc()) {
-        $total_filtered = (int)$cr['cnt'];
+    if ($cnt_stmt) {
+        if (!empty($bind_params)) {
+            $cnt_stmt->bind_param($bind_types, ...$bind_params);
+        }
+        $cnt_stmt->execute();
+        $cnt_res = $cnt_stmt->get_result();
+        if ($cr = $cnt_res->fetch_assoc()) {
+            $total_filtered = (int)$cr['cnt'];
+        }
+        $cnt_stmt->close();
     }
     $total_pages = max(1, (int)ceil($total_filtered / $per_page));
     if ($page > $total_pages) $page = $total_pages;
     $offset = ($page - 1) * $per_page;
 
     // Complaints list
-    $res = $conn->query("SELECT * FROM complaints " . $where_sql . " ORDER BY id DESC LIMIT " . $per_page . " OFFSET " . $offset);
-    if ($res) {
+    $stmt = $conn->prepare("SELECT * FROM complaints " . $where_sql . " ORDER BY id DESC LIMIT ? OFFSET ?");
+    if ($stmt) {
+        $limit_types = $bind_types . 'ii';
+        $limit_params = array_merge($bind_params, [$per_page, $offset]);
+        $stmt->bind_param($limit_types, ...$limit_params);
+        $stmt->execute();
+        $res = $stmt->get_result();
         while ($r = $res->fetch_assoc()) {
             $complaints_list[] = $r;
         }
+        $stmt->close();
     }
 
     // Load active categories from database
@@ -246,15 +295,15 @@ if ($conn && !$conn->connect_error) {
 
         <!-- Quick Stats Cards -->
         <div class="stats-grid">
-            <a href="home.php" class="stat-card" style="text-decoration:none; <?= $filter_status === '' ? 'border-color:var(--secondary);' : '' ?>">
+            <a href="home.php?view=<?= urlencode($view_scope) ?>" class="stat-card" style="text-decoration:none; <?= $filter_status === '' ? 'border-color:var(--secondary);' : '' ?>">
                 <div class="stat-icon total">📋</div>
                 <div>
                     <div class="stat-number"><?= $total_count ?></div>
-                    <div class="stat-title">Total Lodged</div>
+                    <div class="stat-title"><?= $view_scope === 'my' ? 'My Total Lodged' : 'Campus Total' ?></div>
                 </div>
             </a>
 
-            <a href="home.php?status=Pending" class="stat-card" style="text-decoration:none; <?= $filter_status === 'Pending' ? 'border-color:var(--secondary);' : '' ?>">
+            <a href="home.php?view=<?= urlencode($view_scope) ?>&status=Pending" class="stat-card" style="text-decoration:none; <?= $filter_status === 'Pending' ? 'border-color:var(--secondary);' : '' ?>">
                 <div class="stat-icon pending">⏳</div>
                 <div>
                     <div class="stat-number"><?= $pending_count ?></div>
@@ -262,7 +311,7 @@ if ($conn && !$conn->connect_error) {
                 </div>
             </a>
 
-            <a href="home.php?status=In+Review" class="stat-card" style="text-decoration:none; <?= $filter_status === 'In Review' ? 'border-color:var(--secondary);' : '' ?>">
+            <a href="home.php?view=<?= urlencode($view_scope) ?>&status=In+Review" class="stat-card" style="text-decoration:none; <?= $filter_status === 'In Review' ? 'border-color:var(--secondary);' : '' ?>">
                 <div class="stat-icon progress">⚙️</div>
                 <div>
                     <div class="stat-number"><?= $progress_count ?></div>
@@ -270,7 +319,7 @@ if ($conn && !$conn->connect_error) {
                 </div>
             </a>
 
-            <a href="home.php?status=Resolved" class="stat-card" style="text-decoration:none; <?= $filter_status === 'Resolved' ? 'border-color:var(--secondary);' : '' ?>">
+            <a href="home.php?view=<?= urlencode($view_scope) ?>&status=Resolved" class="stat-card" style="text-decoration:none; <?= $filter_status === 'Resolved' ? 'border-color:var(--secondary);' : '' ?>">
                 <div class="stat-icon resolved">✅</div>
                 <div>
                     <div class="stat-number"><?= $resolved_count ?></div>
@@ -279,7 +328,7 @@ if ($conn && !$conn->connect_error) {
             </a>
 
             <?php if ($dismissed_count > 0): ?>
-            <a href="home.php?status=Dismissed" class="stat-card" style="text-decoration:none; <?= $filter_status === 'Dismissed' ? 'border-color:var(--secondary);' : '' ?>">
+            <a href="home.php?view=<?= urlencode($view_scope) ?>&status=Dismissed" class="stat-card" style="text-decoration:none; <?= $filter_status === 'Dismissed' ? 'border-color:var(--secondary);' : '' ?>">
                 <div class="stat-icon" style="background:#fee2e2; color:#b91c1c;">🚫</div>
                 <div>
                     <div class="stat-number"><?= $dismissed_count ?></div>
@@ -287,6 +336,18 @@ if ($conn && !$conn->connect_error) {
                 </div>
             </a>
             <?php endif; ?>
+        </div>
+
+        <!-- View Scope Tabs -->
+        <div style="display: flex; gap: 8px; margin-bottom: 20px;">
+            <a href="home.php?view=my" class="btn <?= $view_scope === 'my' ? 'btn-primary' : 'btn-outline' ?> btn-sm" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600;">
+                <span>📋</span>
+                <span>My Complaints</span>
+            </a>
+            <a href="home.php?view=all" class="btn <?= $view_scope === 'all' ? 'btn-primary' : 'btn-outline' ?> btn-sm" style="display: inline-flex; align-items: center; gap: 6px; font-weight: 600;">
+                <span>🌐</span>
+                <span>Campus Grievances & Resolutions</span>
+            </a>
         </div>
 
         <!-- Main Content Area -->
@@ -298,18 +359,42 @@ if ($conn && !$conn->connect_error) {
                         <svg width="18" height="18" style="width: 18px; height: 18px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                         </svg>
-                        <span>My Complaint Tickets</span>
+                        <span><?= $view_scope === 'my' ? 'My Complaint Tickets' : 'Campus Grievance Feed & Resolutions' ?></span>
                     </h3>
-                    <span style="font-size: 13px; color: var(--text-secondary);"><?= count($complaints_list) ?> entries</span>
+                    <span style="font-size: 13px; color: var(--text-secondary);"><?= $total_filtered ?> entries</span>
                 </div>
+
+                <!-- Filters Bar -->
+                <form method="GET" action="home.php" class="filters-bar" style="margin: 0; padding: 10px 16px; border-bottom: 1px solid var(--border-color); background: var(--surface-muted); display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
+                    <input type="hidden" name="view" value="<?= htmlspecialchars($view_scope) ?>">
+                    <select name="status" style="padding: 5px 8px; font-size: 12px; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-primary);">
+                        <option value="">All Statuses</option>
+                        <option value="Pending"   <?= $filter_status === 'Pending'   ? 'selected' : '' ?>>Pending</option>
+                        <option value="In Review" <?= $filter_status === 'In Review' ? 'selected' : '' ?>>In Review</option>
+                        <option value="Resolved"  <?= $filter_status === 'Resolved'  ? 'selected' : '' ?>>Resolved</option>
+                        <option value="Dismissed" <?= $filter_status === 'Dismissed' ? 'selected' : '' ?>>Dismissed</option>
+                    </select>
+                    <select name="category" style="padding: 5px 8px; font-size: 12px; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-primary);">
+                        <option value="">All Categories</option>
+                        <?php foreach ($categories_list as $cat): ?>
+                            <option value="<?= htmlspecialchars($cat['name']) ?>" <?= $filter_category === $cat['name'] ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($cat['name']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <input type="text" name="q" placeholder="Search subject or description..." value="<?= htmlspecialchars($search_query) ?>" style="padding: 5px 8px; font-size: 12px; border-radius: 4px; border: 1px solid var(--border-color); flex: 1; min-width: 140px; background: var(--bg-card); color: var(--text-primary);">
+                    <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+                    <a href="home.php?view=<?= urlencode($view_scope) ?>" class="btn btn-outline btn-sm">Clear</a>
+                </form>
+
                 <div class="panel-body">
                     <?php if (empty($complaints_list)): ?>
                         <div class="empty-state">
                             <svg width="48" height="48" style="width: 48px; height: 48px;" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                             </svg>
-                            <h4>No complaints filed yet</h4>
-                            <p style="font-size: 13px; margin-top: 4px;">Use the form on the right to submit your first grievance or request to PUCIT staff.</p>
+                            <h4>No complaints found</h4>
+                            <p style="font-size: 13px; margin-top: 4px;">Try adjusting your filters or use the form on the right to file a new grievance.</p>
                         </div>
                     <?php else: ?>
                         <div class="table-responsive">
@@ -321,6 +406,9 @@ if ($conn && !$conn->connect_error) {
                                         <th>Category</th>
                                         <th>Priority</th>
                                         <th>Status</th>
+                                        <?php if ($view_scope === 'all'): ?>
+                                            <th>Filed By</th>
+                                        <?php endif; ?>
                                         <th>Date</th>
                                         <th>Action</th>
                                     </tr>
@@ -350,6 +438,15 @@ if ($conn && !$conn->connect_error) {
                                                 ?>
                                                 <span class="badge <?= $badge_cls ?>"><?= htmlspecialchars($c["status"]) ?></span>
                                             </td>
+                                            <?php if ($view_scope === 'all'): ?>
+                                                <td>
+                                                    <?php if ((int)$c["user_id"] === (int)$user_id): ?>
+                                                        <span class="badge badge-role-student">You</span>
+                                                    <?php else: ?>
+                                                        <small style="color: var(--text-muted);">PUCIT Student</small>
+                                                    <?php endif; ?>
+                                                </td>
+                                            <?php endif; ?>
                                             <td><small style="color: var(--text-muted);"><?= date("M d, Y", strtotime($c["created_at"])) ?></small></td>
                                             <td>
                                                 <button type="button" class="btn btn-outline btn-sm" onclick="openDetail(<?= $c['id'] ?>)">View</button>
@@ -480,6 +577,17 @@ if ($conn && !$conn->connect_error) {
             <div class="detail-row">
                 <div class="detail-label">Department / Category</div>
                 <div class="detail-value"><?= htmlspecialchars($c['category']) ?></div>
+            </div>
+
+            <div class="detail-row">
+                <div class="detail-label">Complainant</div>
+                <div class="detail-value">
+                    <?php if ((int)$c["user_id"] === (int)$user_id): ?>
+                        <strong>Filed by You (<?= htmlspecialchars($user_name) ?>)</strong>
+                    <?php else: ?>
+                        <span style="color: var(--text-muted);">PUCIT Student (Identity Anonymous / Protected)</span>
+                    <?php endif; ?>
+                </div>
             </div>
 
             <div class="detail-row">
