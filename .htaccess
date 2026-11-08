@@ -56,7 +56,7 @@ Options -Indexes
 
 # ---- PHP hardening (mod_php only) ---------------------------
 <IfModule mod_php.c>
-    php_flag expose_php     Offq
+    php_flag expose_php     Off
     php_flag display_errors Off
     php_flag log_errors     On
 </IfModule>
