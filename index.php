@@ -75,10 +75,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                                      . "    {$otp}\n\n"
                                      . "Please enter this verification code on the portal to activate your Teacher account.\n\n"
                                      . "Regards,\nPUCIT Administration";
-                            $headers = "From: " . SUPPORT_EMAIL . "\r\n"
-                                     . "Reply-To: " . SUPPORT_EMAIL . "\r\n"
-                                     . "X-Mailer: PHP/" . phpversion();
-                            @mail($email, $subject, $message, $headers);
+                            send_system_email($email, $subject, $message);
 
                             $_SESSION['verify_email'] = $email;
                             $_SESSION['verify_role']  = 'teacher';

@@ -80,8 +80,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["resend_otp"])) {
 
             $subject = "PUCIT Portal - Your New Verification Code";
             $message = "Your new 6-digit verification code is: {$new_otp}\n\nRegards,\nPUCIT Administration";
-            $headers = "From: " . SUPPORT_EMAIL . "\r\nReply-To: " . SUPPORT_EMAIL;
-            @mail($verify_email, $subject, $message, $headers);
+            send_system_email($verify_email, $subject, $message);
 
             $_SESSION['dev_otp'] = $new_otp;
             $dev_otp = $new_otp;

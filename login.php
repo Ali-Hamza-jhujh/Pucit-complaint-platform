@@ -41,14 +41,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $to = SUPPORT_EMAIL;
             $subject = "PUCIT Portal - Password Reset Request";
             $body = "A password reset request was lodged on the PUCIT Complaint Portal.\n\n"
-                  . "Target Student Email: {$reset_email}\n"
+                  . "Target User Email: {$reset_email}\n"
                   . "Client IP: {$ip}\n"
                   . "Timestamp: " . date("Y-m-d H:i:s") . "\n\n"
-                  . "Please verify student credentials and assist with account recovery.";
-            $headers = "From: noreply@pucit.edu.pk\r\n"
-                     . "Reply-To: {$reset_email}\r\n"
-                     . "X-Mailer: PHP/" . phpversion();
-            @mail($to, $subject, $body, $headers);
+                  . "Please verify user credentials and assist with account recovery.\n"
+                  . "Admin Panel URL: http://dev.local/admin/users.php";
+            send_system_email($to, $subject, $body, $reset_email);
 
             $success = "Password reset request submitted. University IT Support at " . htmlspecialchars(SUPPORT_EMAIL) . " has been notified.";
         }

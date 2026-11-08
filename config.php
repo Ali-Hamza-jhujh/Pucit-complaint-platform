@@ -46,6 +46,16 @@ define('APP_ORG',       'Punjab University College of Information Technology');
 define('APP_VERSION',   '1.0.0');
 define('SUPPORT_EMAIL', 'oalihamza8@gmail.com');
 
+// -------------------------------------------------
+// SMTP & Email Delivery Settings
+// -------------------------------------------------
+define('SMTP_ENABLED',  filter_var(getenv('SMTP_ENABLED') ?: false, FILTER_VALIDATE_BOOLEAN));
+define('SMTP_HOST',     getenv('SMTP_HOST') ?: 'smtp.gmail.com');
+define('SMTP_PORT',     (int)(getenv('SMTP_PORT') ?: 587));
+define('SMTP_USER',     getenv('SMTP_USER') ?: 'oalihamza8@gmail.com');
+define('SMTP_PASS',     getenv('SMTP_PASS') ?: '');
+define('SMTP_FROM_NAME',getenv('SMTP_FROM_NAME') ?: APP_NAME);
+
 // Base URL path — '' if installed at web root, '/subdir' if in a subdirectory.
 define('BASE_PATH', '');
 
@@ -103,3 +113,6 @@ if (SHOW_ERRORS) {
     error_reporting(E_ALL & ~E_DEPRECATED & ~E_STRICT);
     ini_set('log_errors', 1);
 }
+
+// Mailer Service
+require_once __DIR__ . '/includes/mailer.php';

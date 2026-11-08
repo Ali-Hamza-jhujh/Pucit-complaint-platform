@@ -488,7 +488,9 @@ if ($conn && !$conn->connect_error) {
             <?php if (!empty($c['image_path'])): ?>
             <div class="detail-row">
                 <div class="detail-label">Attached Photo</div>
-                <img src="<?= htmlspecialchars(ltrim($c['image_path'], '/')) ?>" alt="Attached evidence" class="complaint-img">
+                <a href="<?= htmlspecialchars(ltrim($c['image_path'], '/')) ?>" target="_blank" rel="noopener" title="Click to view full image">
+                    <img src="<?= htmlspecialchars(ltrim($c['image_path'], '/')) ?>" alt="Attached evidence" class="complaint-img">
+                </a>
             </div>
             <?php endif; ?>
 
