@@ -65,6 +65,8 @@ if ($conn && !$conn->connect_error) {
     // Migration: ensure new columns exist in USERS table
     $add_col('USERS', 'role', "ENUM('student','admin') NOT NULL DEFAULT 'student'");
     $add_col('USERS', 'is_active', "TINYINT(1) NOT NULL DEFAULT 1");
+    @$conn->query("UPDATE USERS SET role = 'student' WHERE role IS NULL");
+    @$conn->query("ALTER TABLE USERS MODIFY COLUMN role ENUM('student','admin') NOT NULL DEFAULT 'student'");
     @$conn->query("ALTER TABLE USERS MODIFY COLUMN password VARCHAR(255) NOT NULL");
 
     // ================================================================

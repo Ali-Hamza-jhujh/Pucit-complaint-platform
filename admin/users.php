@@ -68,8 +68,8 @@ $user_stats = ['total' => 0, 'students' => 0, 'admins' => 0];
 if ($conn && !$conn->connect_error) {
     $s_res = $conn->query("SELECT 
         COUNT(*) AS total,
-        SUM(role = 'student') AS students,
-        SUM(role = 'admin') AS admins
+        SUM(CASE WHEN COALESCE(role, 'student') = 'student' THEN 1 ELSE 0 END) AS students,
+        SUM(CASE WHEN role = 'admin' THEN 1 ELSE 0 END) AS admins
         FROM USERS");
     if ($s_res && $row = $s_res->fetch_assoc()) {
         $user_stats = array_merge($user_stats, array_map('intval', $row));
@@ -84,10 +84,10 @@ $where = [];
 $bind_types = '';
 $bind_params = [];
 
-if ($role_filter === 'student' || $role_filter === 'admin') {
-    $where[] = "role = ?";
-    $bind_types .= 's';
-    $bind_params[] = $role_filter;
+if ($role_filter === 'student') {
+    $where[] = "COALESCE(role, 'student') = 'student'";
+} elseif ($role_filter === 'admin') {
+    $where[] = "role = 'admin'";
 }
 
 if ($search !== '') {
