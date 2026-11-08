@@ -22,8 +22,10 @@ $action_error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $conn && !$conn->connect_error) {
 
-    // Update complaint status
-    if (isset($_POST['update_status'])) {
+    // Verify CSRF token
+    if (!verify_csrf($_POST['csrf_token'] ?? '')) {
+        $action_error = 'Security token expired or invalid. Please refresh and try again.';
+    } elseif (isset($_POST['update_status'])) {
         $complaint_id = intval($_POST['complaint_id'] ?? 0);
         $new_status   = trim($_POST['new_status'] ?? '');
         $notes        = trim($_POST['admin_notes'] ?? '');
@@ -464,6 +466,7 @@ if ($conn && !$conn->connect_error) {
 
             <!-- Status Update Form -->
             <form method="POST" action="index.php" class="action-form">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
                 <input type="hidden" name="complaint_id" value="<?= $c['id'] ?>">
                 <div class="detail-label" style="margin-bottom: 8px;">Update Status</div>
                 <select name="new_status">

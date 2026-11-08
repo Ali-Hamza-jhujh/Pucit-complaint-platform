@@ -14,13 +14,16 @@ $name = "";
 $email = "";
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    $csrf = $_POST["csrf_token"] ?? "";
     $name = trim($_POST["name"] ?? "");
     $email = trim($_POST["email"] ?? "");
     $pass = $_POST["password"] ?? "";
     $c_pass = $_POST["c_password"] ?? "";
 
     // Validation
-    if (empty($name) || empty($email) || empty($pass) || empty($c_pass)) {
+    if (!verify_csrf($csrf)) {
+        $error = "Security token expired or invalid. Please refresh and try again.";
+    } elseif (empty($name) || empty($email) || empty($pass) || empty($c_pass)) {
         $error = "Please fill in all required fields.";
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = "Please enter a valid email address.";
@@ -112,6 +115,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         <!-- Signup Form -->
         <form method="POST" action="index.php" autocomplete="on">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
             <!-- Full Name -->
             <div class="form-group">
                 <label class="form-label" for="name">Full Name</label>

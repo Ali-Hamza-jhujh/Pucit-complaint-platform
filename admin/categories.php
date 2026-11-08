@@ -18,8 +18,12 @@ $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $conn && !$conn->connect_error) {
 
+    // CSRF verification
+    if (!verify_csrf($_POST['csrf_token'] ?? '')) {
+        $error = 'Security token expired or invalid. Please refresh and try again.';
+    }
     // ---- Create category ----
-    if (isset($_POST['add_category'])) {
+    elseif (isset($_POST['add_category'])) {
         $name = trim($_POST['cat_name'] ?? '');
         $desc = trim($_POST['cat_desc'] ?? '');
         $order = intval($_POST['cat_order'] ?? 0);
@@ -197,6 +201,7 @@ if ($conn && !$conn->connect_error) {
         <div class="add-form">
             <h3>➕ Add New Category</h3>
             <form method="POST" action="categories.php">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label" for="cat_name">Category Name</label>
@@ -264,10 +269,12 @@ if ($conn && !$conn->connect_error) {
                                             <div class="cat-actions">
                                                 <button type="button" class="btn btn-outline btn-sm" onclick="openEdit(<?= $cat['id'] ?>, '<?= htmlspecialchars(addslashes($cat['name']), ENT_QUOTES) ?>', '<?= htmlspecialchars(addslashes($cat['description'] ?? ''), ENT_QUOTES) ?>', <?= $cat['sort_order'] ?>)">Edit</button>
                                                 <form method="POST" action="categories.php" style="margin:0;">
+                                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
                                                     <input type="hidden" name="cat_id" value="<?= $cat['id'] ?>">
                                                     <button type="submit" name="toggle_category" class="btn btn-outline btn-sm"><?= $cat['is_active'] ? 'Deactivate' : 'Activate' ?></button>
                                                 </form>
                                                 <form method="POST" action="categories.php" style="margin:0;" onsubmit="return confirm('Delete category #<?= $cat['id'] ?>? This cannot be undone.');">
+                                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
                                                     <input type="hidden" name="cat_id" value="<?= $cat['id'] ?>">
                                                     <button type="submit" name="delete_category" class="btn btn-outline btn-sm" style="color:var(--danger); border-color:var(--danger);">Delete</button>
                                                 </form>
@@ -293,6 +300,7 @@ if ($conn && !$conn->connect_error) {
             <button class="btn-close-modal" onclick="closeEdit()">&times;</button>
             <h3>Edit Category</h3>
             <form method="POST" action="categories.php">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
                 <input type="hidden" name="cat_id" id="edit_cat_id">
                 <div class="form-group">
                     <label class="form-label" for="edit_name">Name</label>

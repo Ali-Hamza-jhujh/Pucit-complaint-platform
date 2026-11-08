@@ -19,8 +19,11 @@ $msg   = '';
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $conn && !$conn->connect_error) {
+    if (!verify_csrf($_POST['csrf_token'] ?? '')) {
+        $error = "Security token expired or invalid. Please refresh and try again.";
+    }
     // Toggle active / suspended status
-    if (isset($_POST['toggle_status'])) {
+    elseif (isset($_POST['toggle_status'])) {
         $target_id = intval($_POST['user_id'] ?? 0);
         if ($target_id === $admin_id) {
             $error = "You cannot deactivate your own administrative account.";
@@ -260,6 +263,7 @@ if ($conn && !$conn->connect_error) {
                                         <td>
                                             <?php if ($u['id'] !== $admin_id): ?>
                                                 <form method="POST" action="users.php" style="margin: 0;">
+                                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
                                                     <input type="hidden" name="user_id" value="<?= $u['id'] ?>">
                                                     <button type="submit" name="toggle_status" class="btn btn-outline btn-sm">
                                                         <?= $u['is_active'] ? 'Suspend' : 'Activate' ?>
