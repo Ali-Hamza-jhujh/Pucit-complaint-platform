@@ -149,67 +149,7 @@ if ($conn && !$conn->connect_error) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard — PUCIT Complaint Portal</title>
-    <link rel="stylesheet" href="../style.css?v=<?= time() ?>">
-    <style>
-        <?= file_get_contents(__DIR__ . '/../style.css') ?>
-
-        /* Admin-specific styles */
-        .admin-nav-links { display: flex; gap: 6px; }
-        .admin-nav-links a {
-            color: #cbd5e1; font-size: 13px; padding: 6px 14px;
-            border-radius: var(--radius-full); transition: var(--transition);
-        }
-        .admin-nav-links a:hover, .admin-nav-links a.active {
-            background: rgba(255,255,255,0.15); color: #fff; text-decoration: none;
-        }
-        .filters-bar {
-            display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
-            margin-bottom: 20px; padding: 16px 20px;
-            background: var(--surface); border: 1px solid var(--border);
-            border-radius: var(--radius-md);
-        }
-        .filters-bar select, .filters-bar input[type="text"] {
-            padding: 8px 12px; font-size: 13px; border: 1.5px solid var(--border);
-            border-radius: var(--radius-sm); font-family: inherit; min-width: 160px;
-        }
-        .filters-bar select:focus, .filters-bar input:focus {
-            outline: none; border-color: var(--secondary);
-        }
-        .detail-modal {
-            display: none; position: fixed; inset: 0; z-index: 999;
-            background: rgba(0,0,0,0.5); align-items: center; justify-content: center;
-        }
-        .detail-modal.open { display: flex; }
-        .detail-card {
-            background: var(--surface); border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-xl); max-width: 640px; width: 95%;
-            max-height: 85vh; overflow-y: auto; padding: 28px 32px;
-        }
-        .detail-card h3 { margin-bottom: 16px; color: var(--primary); }
-        .detail-row { margin-bottom: 12px; }
-        .detail-label { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
-        .detail-value { font-size: 14px; color: var(--text-primary); margin-top: 2px; }
-        .identity-reveal {
-            background: #fef3c7; border: 1px solid #fcd34d; border-radius: var(--radius-md);
-            padding: 14px 18px; margin-top: 16px;
-        }
-        .identity-reveal h4 { color: #92400e; font-size: 14px; margin-bottom: 6px; }
-        .btn-close-modal {
-            float: right; background: none; border: none; font-size: 24px;
-            cursor: pointer; color: var(--text-muted); line-height: 1;
-        }
-        .btn-close-modal:hover { color: var(--text-primary); }
-        .action-form { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
-        .action-form select, .action-form textarea {
-            width: 100%; padding: 10px 14px; font-size: 14px;
-            border: 1.5px solid var(--border); border-radius: var(--radius-md);
-            font-family: inherit; margin-bottom: 12px;
-        }
-        .action-form select:focus, .action-form textarea:focus {
-            outline: none; border-color: var(--secondary);
-        }
-        .complaint-img { max-width: 100%; max-height: 200px; border-radius: var(--radius-sm); margin-top: 8px; }
-    </style>
+    <link rel="stylesheet" href="../style.css?v=<?= filemtime(__DIR__ . '/../style.css') ?>">
 </head>
 <body>
 

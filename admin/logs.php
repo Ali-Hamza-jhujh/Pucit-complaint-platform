@@ -79,28 +79,7 @@ if ($conn && !$conn->connect_error) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Audit Logs — PUCIT Admin</title>
-    <link rel="stylesheet" href="../style.css?v=<?= time() ?>">
-    <style>
-        <?= file_get_contents(__DIR__ . '/../style.css') ?>
-        .admin-nav-links { display: flex; gap: 6px; }
-        .admin-nav-links a {
-            color: #cbd5e1; font-size: 13px; padding: 6px 14px;
-            border-radius: var(--radius-full); transition: var(--transition);
-        }
-        .admin-nav-links a:hover, .admin-nav-links a.active {
-            background: rgba(255,255,255,0.15); color: #fff; text-decoration: none;
-        }
-        .filters-bar {
-            display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
-            margin-bottom: 20px; padding: 16px 20px;
-            background: var(--surface); border: 1px solid var(--border);
-            border-radius: var(--radius-md);
-        }
-        .filters-bar select, .filters-bar input[type="number"] {
-            padding: 8px 12px; font-size: 13px; border: 1.5px solid var(--border);
-            border-radius: var(--radius-sm); font-family: inherit; min-width: 160px;
-        }
-    </style>
+    <link rel="stylesheet" href="../style.css?v=<?= filemtime(__DIR__ . '/../style.css') ?>">
 </head>
 <body>
 

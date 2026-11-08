@@ -136,12 +136,7 @@ if ($conn && !$conn->connect_error) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PUCIT Complaint Platform - Home Dashboard</title>
-    <!-- Cache-busting CSS link -->
-    <link rel="stylesheet" href="style.css?v=<?= time() ?>">
-    <!-- Inline fallback to ensure instant loading even if cached -->
-    <style>
-        <?= file_get_contents(__DIR__ . "/style.css") ?>
-    </style>
+    <link rel="stylesheet" href="style.css?v=<?= filemtime(__DIR__ . '/style.css') ?>">
 </head>
 <body>
 
@@ -179,18 +174,6 @@ if ($conn && !$conn->connect_error) {
     </nav>
 
     <div class="dashboard-container">
-
-        <!-- Development Notice -->
-        <div class="dev-banner">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <span style="font-size: 20px;">🚧</span>
-                <div>
-                    <strong>PUCIT Complaint Platform — Home Page Under Active Development</strong>
-                    <div style="font-size: 13px; opacity: 0.9;">You can lodge test complaints, track status changes, and extend functionality as needed.</div>
-                </div>
-            </div>
-            <span class="badge badge-pending">WIP Mode</span>
-        </div>
 
         <!-- Hero Welcome -->
         <div class="hero-welcome">

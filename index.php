@@ -81,12 +81,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PUCIT Complaint Portal - Student Registration</title>
-    <!-- Cache-busting CSS link -->
-    <link rel="stylesheet" href="style.css?v=<?= time() ?>">
-    <!-- Inline fallback to ensure instant loading even if cached -->
-    <style>
-        <?= file_get_contents(__DIR__ . "/style.css") ?>
-    </style>
+    <link rel="stylesheet" href="style.css?v=<?= filemtime(__DIR__ . '/style.css') ?>">
 </head>
 <body>
 
