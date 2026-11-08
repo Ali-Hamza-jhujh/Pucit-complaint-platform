@@ -267,7 +267,8 @@ if ($conn && !$conn->connect_error) {
                         </div>
                     <?php endif; ?>
 
-                    <form method="POST" action="home.php">
+                    <form method="POST" action="home.php" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
                         <div class="form-group">
                             <label class="form-label" for="category">Department / Category</label>
                             <select name="category" id="category" class="form-select" required>
