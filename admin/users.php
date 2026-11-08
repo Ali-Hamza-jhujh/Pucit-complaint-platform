@@ -61,14 +61,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $conn && !$conn->connect_error) {
             }
         }
     }
+    // Change user role
+    elseif (isset($_POST['change_user_role'])) {
+        $target_id = intval($_POST['user_id'] ?? 0);
+        $new_role  = trim($_POST['new_role'] ?? '');
+        if ($target_id === $admin_id) {
+            $error = "You cannot modify your own administrative role.";
+        } elseif ($target_id > 0 && in_array($new_role, ['student', 'teacher', 'admin'])) {
+            $stmt = $conn->prepare("UPDATE USERS SET role = ? WHERE id = ?");
+            if ($stmt) {
+                $stmt->bind_param('si', $new_role, $target_id);
+                if ($stmt->execute()) {
+                    $msg = "Role updated to " . ucfirst($new_role) . " for User #{$target_id}.";
+                } else {
+                    $error = "Failed to update role: " . htmlspecialchars($conn->error);
+                }
+                $stmt->close();
+            }
+        }
+    }
 }
 
 // Stats
-$user_stats = ['total' => 0, 'students' => 0, 'admins' => 0];
+$user_stats = ['total' => 0, 'students' => 0, 'teachers' => 0, 'admins' => 0];
 if ($conn && !$conn->connect_error) {
     $s_res = $conn->query("SELECT 
         COUNT(*) AS total,
         SUM(CASE WHEN COALESCE(role, 'student') = 'student' THEN 1 ELSE 0 END) AS students,
+        SUM(CASE WHEN role = 'teacher' THEN 1 ELSE 0 END) AS teachers,
         SUM(CASE WHEN role = 'admin' THEN 1 ELSE 0 END) AS admins
         FROM USERS");
     if ($s_res && $row = $s_res->fetch_assoc()) {
@@ -86,6 +106,8 @@ $bind_params = [];
 
 if ($role_filter === 'student') {
     $where[] = "COALESCE(role, 'student') = 'student'";
+} elseif ($role_filter === 'teacher') {
+    $where[] = "role = 'teacher'";
 } elseif ($role_filter === 'admin') {
     $where[] = "role = 'admin'";
 }
@@ -129,6 +151,7 @@ if ($conn && !$conn->connect_error) {
         .badge-active { background: #d1fae5; color: #065f46; }
         .badge-inactive { background: #fee2e2; color: #991b1b; }
         .badge-role-admin { background: #ede9fe; color: #6b21a8; font-weight: 700; }
+        .badge-role-teacher { background: #fef3c7; color: #92400e; font-weight: 700; }
         .badge-role-student { background: #e0f2fe; color: #0369a1; }
     </style>
 </head>
@@ -187,6 +210,13 @@ if ($conn && !$conn->connect_error) {
                 </div>
             </div>
             <div class="stat-card">
+                <div class="stat-icon pending" style="background:#fef3c7; color:#92400e;">👨‍🏫</div>
+                <div>
+                    <div class="stat-number"><?= $user_stats['teachers'] ?></div>
+                    <div class="stat-title">Teachers / Faculty</div>
+                </div>
+            </div>
+            <div class="stat-card">
                 <div class="stat-icon pending">🛡️</div>
                 <div>
                     <div class="stat-number"><?= $user_stats['admins'] ?></div>
@@ -208,6 +238,7 @@ if ($conn && !$conn->connect_error) {
             <select name="role">
                 <option value="">All Roles</option>
                 <option value="student" <?= $role_filter === 'student' ? 'selected' : '' ?>>Students</option>
+                <option value="teacher" <?= $role_filter === 'teacher' ? 'selected' : '' ?>>Teachers</option>
                 <option value="admin"   <?= $role_filter === 'admin'   ? 'selected' : '' ?>>Admins</option>
             </select>
             <input type="text" name="q" placeholder="Search by name or email..." value="<?= htmlspecialchars($search) ?>">
@@ -252,6 +283,8 @@ if ($conn && !$conn->connect_error) {
                                         <td>
                                             <?php if ($u['role'] === 'admin'): ?>
                                                 <span class="badge badge-role-admin">Admin</span>
+                                            <?php elseif ($u['role'] === 'teacher'): ?>
+                                                <span class="badge badge-role-teacher">Teacher</span>
                                             <?php else: ?>
                                                 <span class="badge badge-role-student">Student</span>
                                             <?php endif; ?>
@@ -267,6 +300,16 @@ if ($conn && !$conn->connect_error) {
                                         <td>
                                             <?php if ($u['id'] !== $admin_id): ?>
                                                 <div style="display: flex; gap: 6px; align-items: center;">
+                                                    <form method="POST" action="users.php" style="margin: 0;">
+                                                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+                                                        <input type="hidden" name="user_id" value="<?= $u['id'] ?>">
+                                                        <input type="hidden" name="change_user_role" value="1">
+                                                        <select name="new_role" onchange="if(confirm('Change role to ' + this.value + '?')) this.form.submit(); else this.value='<?= $u['role'] ?>';" style="padding: 4px 6px; font-size: 11px; border-radius: 4px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-primary); cursor: pointer;" title="Change account role">
+                                                            <option value="student" <?= $u['role'] === 'student' ? 'selected' : '' ?>>Student</option>
+                                                            <option value="teacher" <?= $u['role'] === 'teacher' ? 'selected' : '' ?>>Teacher</option>
+                                                            <option value="admin"   <?= $u['role'] === 'admin'   ? 'selected' : '' ?>>Admin</option>
+                                                        </select>
+                                                    </form>
                                                     <form method="POST" action="users.php" style="margin: 0;">
                                                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
                                                         <input type="hidden" name="user_id" value="<?= $u['id'] ?>">

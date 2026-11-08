@@ -49,23 +49,66 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             if ($check_stmt->num_rows > 0) {
                 $error = "An account with this email already exists. <a href='login.php'>Login here</a>.";
             } else {
+                // Auto-detect role: students contain roll numbers/digits, teachers use name conventions
+                $email_local = strtolower(explode('@', $email)[0]);
+                $has_digits = (bool)preg_match('/\d/', $email_local);
+                $is_student_program = (bool)preg_match('/^(bcs|bit|bse|bsef|bcsf|bitf|msc|msit|msse|mscs|phd)/i', $email_local);
+                $detected_role = ($has_digits || $is_student_program) ? 'student' : 'teacher';
+
                 // Hash password securely
                 $hashed_pass = password_hash($pass, PASSWORD_DEFAULT);
-                $insert_stmt = $conn->prepare("INSERT INTO USERS (name, email, password) VALUES (?, ?, ?)");
-                
-                if ($insert_stmt) {
-                    $insert_stmt->bind_param("sss", $name, $email, $hashed_pass);
-                    if ($insert_stmt->execute()) {
-                        increment_rate_limit($ip, 'register_attempt');
-                        // Redirect to login page with success message
-                        header("Location: login.php?registered=1");
-                        exit();
+
+                // Teacher accounts require email OTP verification to guarantee ownership
+                if ($detected_role === 'teacher') {
+                    $otp = (string)random_int(100000, 999999);
+                    $is_verified = 0;
+                    $insert_stmt = $conn->prepare("INSERT INTO USERS (name, email, password, role, is_verified, verification_code) VALUES (?, ?, ?, ?, ?, ?)");
+                    if ($insert_stmt) {
+                        $insert_stmt->bind_param("ssssis", $name, $email, $hashed_pass, $detected_role, $is_verified, $otp);
+                        if ($insert_stmt->execute()) {
+                            increment_rate_limit($ip, 'register_attempt');
+
+                            // Dispatch verification email
+                            $subject = "PUCIT Portal - Verify Your Teacher / Faculty Account";
+                            $message = "Dear {$name},\n\n"
+                                     . "Your 6-digit verification code for the PUCIT Complaint Portal is:\n\n"
+                                     . "    {$otp}\n\n"
+                                     . "Please enter this verification code on the portal to activate your Teacher account.\n\n"
+                                     . "Regards,\nPUCIT Administration";
+                            $headers = "From: " . SUPPORT_EMAIL . "\r\n"
+                                     . "Reply-To: " . SUPPORT_EMAIL . "\r\n"
+                                     . "X-Mailer: PHP/" . phpversion();
+                            @mail($email, $subject, $message, $headers);
+
+                            $_SESSION['verify_email'] = $email;
+                            $_SESSION['verify_role']  = 'teacher';
+                            $_SESSION['dev_otp']      = $otp;
+
+                            header("Location: verify.php");
+                            exit();
+                        } else {
+                            $error = "Failed to create account: " . htmlspecialchars($conn->error);
+                        }
+                        $insert_stmt->close();
                     } else {
-                        $error = "Failed to create account: " . htmlspecialchars($conn->error);
+                        $error = "Database statement error: " . htmlspecialchars($conn->error);
                     }
-                    $insert_stmt->close();
                 } else {
-                    $error = "Database statement error: " . htmlspecialchars($conn->error);
+                    // Student account
+                    $insert_stmt = $conn->prepare("INSERT INTO USERS (name, email, password, role, is_verified) VALUES (?, ?, ?, 'student', 1)");
+                    if ($insert_stmt) {
+                        $insert_stmt->bind_param("sss", $name, $email, $hashed_pass);
+                        if ($insert_stmt->execute()) {
+                            increment_rate_limit($ip, 'register_attempt');
+                            header("Location: login.php?registered=1");
+                            exit();
+                        } else {
+                            $error = "Failed to create account: " . htmlspecialchars($conn->error);
+                        }
+                        $insert_stmt->close();
+                    } else {
+                        $error = "Database statement error: " . htmlspecialchars($conn->error);
+                    }
                 }
             }
             $check_stmt->close();
@@ -80,7 +123,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PUCIT Complaint Portal - Student Registration</title>
+    <title>PUCIT Complaint Portal - Registration</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%230e2a47'><path d='M12 3L1 9L12 15L21 10.09V17H23V9M5 13.18V17.18C5 19.94 8.13 22 12 22C15.87 22 19 19.94 19 17.18V13.18L12 17L5 13.18Z'/></svg>">
     <link rel="stylesheet" href="style.css?v=<?= filemtime(__DIR__ . '/style.css') ?>">
 </head>
@@ -139,7 +182,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             <!-- Email Address -->
             <div class="form-group">
-                <label class="form-label" for="email">Student / College Email</label>
+                <label class="form-label" for="email">Official PUCIT Email (Student or Faculty)</label>
                 <div class="input-container">
                     <span class="input-icon">
                         <svg width="18" height="18" style="width: 18px; height: 18px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -151,7 +194,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         name="email" 
                         id="email"
                         class="form-control" 
-                        placeholder="e.g. bsef22m001@pucit.edu.pk" 
+                        placeholder="e.g. bsef22m001@pucit.edu.pk or faculty@pucit.edu.pk" 
                         value="<?= htmlspecialchars($email) ?>" 
                         required
                     >

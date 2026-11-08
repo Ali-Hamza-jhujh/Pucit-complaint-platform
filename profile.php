@@ -118,7 +118,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 </div>
                 <div>
                     <div class="nav-title-text">PUCIT Complaint Portal</div>
-                    <div class="nav-subtitle-text"><?= $user_role === 'admin' ? 'Administrative Access' : 'Student Grievance System' ?></div>
+                    <div class="nav-subtitle-text"><?= $user_role === 'admin' ? 'Administrative Access' : ($user_role === 'teacher' ? 'Faculty Portal' : 'Student Grievance System') ?></div>
                 </div>
             </a>
 
@@ -178,6 +178,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                         <label class="form-label" for="email">Official University Email (Unchangeable)</label>
                         <input type="email" id="email" class="form-control" style="padding-left: 14px; background: var(--surface-muted); color: var(--text-muted); cursor: not-allowed;" value="<?= htmlspecialchars($user_data['email'] ?? $user_email) ?>" readonly>
                         <small style="color: var(--text-muted); font-size: 12px;">Official email is permanently bound to your university registration and cannot be modified.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Account Role</label>
+                        <div style="font-size: 14px; font-weight: 600; padding: 4px 0; color: var(--navy);">
+                            <?= ucfirst(htmlspecialchars($user_role)) ?>
+                        </div>
                     </div>
 
                     <div class="form-group">

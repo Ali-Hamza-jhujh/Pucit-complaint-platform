@@ -49,8 +49,10 @@ if ($conn && !$conn->connect_error) {
         name       VARCHAR(100) NOT NULL,
         email      VARCHAR(120) NOT NULL UNIQUE,
         password   VARCHAR(255) NOT NULL,
-        role       ENUM('student','admin') NOT NULL DEFAULT 'student',
+        role       ENUM('student','teacher','admin') NOT NULL DEFAULT 'student',
         is_active  TINYINT(1)   NOT NULL DEFAULT 1,
+        verification_code VARCHAR(10) NULL,
+        is_verified TINYINT(1)  NOT NULL DEFAULT 1,
         created_at TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
@@ -63,10 +65,12 @@ if ($conn && !$conn->connect_error) {
     };
 
     // Migration: ensure new columns exist in USERS table
-    $add_col('USERS', 'role', "ENUM('student','admin') NOT NULL DEFAULT 'student'");
+    $add_col('USERS', 'role', "ENUM('student','teacher','admin') NOT NULL DEFAULT 'student'");
     $add_col('USERS', 'is_active', "TINYINT(1) NOT NULL DEFAULT 1");
+    $add_col('USERS', 'verification_code', "VARCHAR(10) NULL");
+    $add_col('USERS', 'is_verified', "TINYINT(1) NOT NULL DEFAULT 1");
     @$conn->query("UPDATE USERS SET role = 'student' WHERE role IS NULL");
-    @$conn->query("ALTER TABLE USERS MODIFY COLUMN role ENUM('student','admin') NOT NULL DEFAULT 'student'");
+    @$conn->query("ALTER TABLE USERS MODIFY COLUMN role ENUM('student','teacher','admin') NOT NULL DEFAULT 'student'");
     @$conn->query("ALTER TABLE USERS MODIFY COLUMN password VARCHAR(255) NOT NULL");
 
     // ================================================================

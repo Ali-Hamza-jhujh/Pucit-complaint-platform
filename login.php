@@ -16,6 +16,10 @@ if (isset($_GET["registered"])) {
     $success = "Registration successful! You can now log in with your credentials.";
 }
 
+if (isset($_GET["verified"])) {
+    $success = "Your official email has been verified successfully. Please sign in below.";
+}
+
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
 
@@ -62,7 +66,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $error = "Database connection error. Please ensure MySQL is active (sudo service mysql start).";
         } else {
         // Prepare secure statement to look up user
-        $stmt = $conn->prepare("SELECT id, name, email, password, role, is_active FROM USERS WHERE email = ? LIMIT 1");
+        $stmt = $conn->prepare("SELECT id, name, email, password, role, is_active, is_verified, verification_code FROM USERS WHERE email = ? LIMIT 1");
         
         if ($stmt) {
             $stmt->bind_param("s", $email);
@@ -91,6 +95,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 if ($password_matched) {
                     if ((int)($user["is_active"] ?? 1) === 0) {
                         $error = "Your account has been deactivated. Please contact PUCIT administration.";
+                    } elseif ((int)($user["is_verified"] ?? 1) === 0) {
+                        $_SESSION['verify_email'] = $user['email'];
+                        $_SESSION['verify_role']  = $user['role'] ?? 'teacher';
+                        if (!empty($user['verification_code'])) {
+                            $_SESSION['dev_otp'] = $user['verification_code'];
+                        }
+                        header("Location: verify.php");
+                        exit();
                     } else {
                         // Regenerate session ID to prevent fixation
                         session_regenerate_id(true);
@@ -162,7 +174,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <p class="brand-subtitle">Punjab University College of Information Technology</p>
             
             <h2 class="auth-card-title">Welcome Back</h2>
-            <p class="auth-card-desc">Sign in with your student credentials to proceed</p>
+            <p class="auth-card-desc">Sign in with your university credentials to proceed</p>
         </div>
 
         <!-- Success Alert -->
@@ -189,7 +201,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         <form method="POST" action="login.php">
             <!-- Email -->
             <div class="form-group">
-                <label class="form-label" for="email">Student / PUCIT Email</label>
+                <label class="form-label" for="email">Official PUCIT Email (Student or Faculty)</label>
                 <div class="input-container">
                     <span class="input-icon">
                         <svg width="18" height="18" style="width: 18px; height: 18px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">

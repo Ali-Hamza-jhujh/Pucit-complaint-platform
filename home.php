@@ -176,7 +176,7 @@ if ($conn && !$conn->connect_error) {
                 </div>
                 <div>
                     <div class="nav-title-text">PUCIT Complaint Portal</div>
-                    <div class="nav-subtitle-text">Student Grievance System</div>
+                    <div class="nav-subtitle-text"><?= ($_SESSION['user_role'] ?? '') === 'teacher' ? 'Faculty Portal' : 'Student Grievance System' ?></div>
                 </div>
             </a>
 
