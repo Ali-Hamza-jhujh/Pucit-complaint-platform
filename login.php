@@ -226,7 +226,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         <div style="background: var(--surface-muted); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 14px 16px; margin-bottom: 16px;">
             <div style="font-size: 13px; font-weight: 600; color: var(--primary); margin-bottom: 6px;">How to reset:</div>
             <ul style="font-size: 13px; color: var(--text-secondary); padding-left: 20px; line-height: 1.6;">
-                <li>Email from your personal backup address or visit IT Helpdesk (Room 102).</li>
+                <li>Email support directly at <strong><?= htmlspecialchars(SUPPORT_EMAIL) ?></strong>.</li>
                 <li>Provide your <strong>Student Roll Number</strong> (e.g., <code>bsef22m001</code>).</li>
                 <li>Attach a photo of your valid <strong>PUCIT Student Card</strong>.</li>
             </ul>
@@ -234,8 +234,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         <div style="display: flex; gap: 10px; justify-content: flex-end;">
             <button type="button" class="btn btn-outline btn-sm" onclick="closeForgotModal()">Close</button>
-            <a href="mailto:support@pucit.edu.pk?subject=Password%20Reset%20Request%20-%20PUCIT%20Complaint%20Portal" class="btn btn-primary btn-sm">
-                Email IT Helpdesk
+            <a href="mailto:<?= htmlspecialchars(SUPPORT_EMAIL) ?>?subject=Password%20Reset%20Request%20-%20PUCIT%20Complaint%20Portal" class="btn btn-primary btn-sm">
+                Email IT Support
             </a>
         </div>
     </div>

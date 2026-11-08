@@ -21,9 +21,10 @@ define('DB_NAME', 'devdb');
 // -------------------------------------------------
 // Application Identity
 // -------------------------------------------------
-define('APP_NAME',    'PUCIT Complaint Portal');
-define('APP_ORG',     'Punjab University College of Information Technology');
-define('APP_VERSION', '1.0.0');
+define('APP_NAME',      'PUCIT Complaint Portal');
+define('APP_ORG',       'Punjab University College of Information Technology');
+define('APP_VERSION',   '1.0.0');
+define('SUPPORT_EMAIL', 'oalihamza8@gmail.com');
 
 // Base URL path — '' if installed at web root, '/subdir' if in a subdirectory.
 define('BASE_PATH', '');
